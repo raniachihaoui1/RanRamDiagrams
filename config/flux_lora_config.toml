@@ -1,0 +1,86 @@
+# =============================================================================
+# FLUX LoRA Training Config — BIG Architecture Diagram Style
+# Targets: x-flux trainer (primary) / kohya_ss FLUX branch (fallback)
+# =============================================================================
+
+[general]
+model_type              = "flux"
+pretrained_model_name_or_path = "models/flux1-dev.safetensors"
+ae                      = "models/ae.safetensors"
+clip_l                  = "models/clip_l.safetensors"
+t5xxl                   = "models/t5xxl_fp16.safetensors"
+output_name             = "big_style_flux"
+output_dir              = "output"
+save_model_as           = "safetensors"
+log_with                = "tensorboard"
+
+# =============================================================================
+# Network (LoRA)
+# =============================================================================
+
+[network]
+network_module          = "lora"
+network_dim             = 16
+network_alpha           = 8
+
+# =============================================================================
+# Training
+# =============================================================================
+
+[training]
+mixed_precision         = "bf16"
+resolution              = "1024,1024"
+train_batch_size        = 1
+gradient_accumulation_steps = 4
+max_train_epochs        = 25
+save_every_n_epochs     = 5
+seed                    = 42
+
+learning_rate           = 5e-5
+lr_scheduler            = "cosine"
+lr_warmup_steps         = 50
+
+# FLUX-specific — do NOT set noise_offset (SDXL-era, breaks FLUX)
+noise_offset            = 0.0
+
+# FLUX dev is distilled — guidance_scale 1.0 during training
+guidance_scale          = 1.0
+
+optimizer_type          = "AdamW8bit"
+max_grad_norm           = 1.0
+
+# =============================================================================
+# Captions
+# =============================================================================
+
+[caption]
+caption_extension       = ".txt"
+shuffle_caption         = true
+keep_tokens             = 1
+
+# =============================================================================
+# Performance
+# =============================================================================
+
+[performance]
+cache_latents           = true
+cache_latents_to_disk   = false
+# T5 encoder is very large — cache outputs to save VRAM every step
+cache_text_encoder_outputs = true
+cache_text_encoder_outputs_to_disk = false
+xformers                = false
+sdpa                    = true
+
+# =============================================================================
+# Dataset
+# =============================================================================
+
+[[datasets]]
+resolution              = 1024
+batch_size              = 1
+enable_bucket           = false
+
+  [[datasets.subsets]]
+  image_dir             = "data/dataset/img/10_BIG_style_diagram"
+  caption_extension     = ".txt"
+  num_repeats           = 3

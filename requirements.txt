@@ -1,0 +1,14 @@
+anthropic>=0.25.0
+opencv-python
+Pillow
+diffusers>=0.28.0
+torch>=2.2.0
+torchvision
+accelerate
+transformers
+sentencepiece
+protobuf
+toml
+tqdm
+click
+safetensors

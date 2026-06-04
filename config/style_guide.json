@@ -1,0 +1,114 @@
+{
+  "name": "BIG Visual Grammar",
+  "version": "1.0",
+
+  "colour_palette": {
+    "background":       { "hex": "#FFFFFF", "role": "primary background — always white" },
+    "structure":        { "hex": "#1A1A1A", "role": "structural outlines and bold line weights" },
+    "accent_orange":    { "hex": "#FF5A1F", "role": "circulation paths, highlight zones, programme fills" },
+    "accent_yellow":    { "hex": "#FFD600", "role": "secondary accent — sun, energy, or programme colour" },
+    "grey_light":       { "hex": "#E8E8E8", "role": "secondary fills, glazing, light zones" },
+    "grey_mid":         { "hex": "#999999", "role": "annotation lines, secondary elements, shadows" }
+  },
+
+  "line_weights": {
+    "structural_outline":   { "px": 2.5, "role": "primary building envelope and major structural elements" },
+    "interior_partition":   { "px": 1.0, "role": "internal walls, floor plates, programme dividers" },
+    "annotation_leader":    { "px": 0.5, "role": "callout lines, dimension lines, labels" }
+  },
+
+  "diagram_types": [
+    {
+      "name": "axonometric_section",
+      "description": "Cutaway axonometric revealing interior organisation and structure",
+      "typical_use": "Showing spatial relationships, programme stacking, structural logic"
+    },
+    {
+      "name": "exploded_axonometric",
+      "description": "Components separated along a vertical axis to show assembly logic",
+      "typical_use": "Construction sequence, layer separation, material systems"
+    },
+    {
+      "name": "bubble_concept_diagram",
+      "description": "Soft circular or organic shapes showing programme adjacencies and flow",
+      "typical_use": "Early concept stage, functional zoning, stakeholder communication"
+    },
+    {
+      "name": "site_plan_aerial",
+      "description": "Top-down orthographic view of building and context at urban or site scale",
+      "typical_use": "Urban context, site strategy, landscape integration"
+    },
+    {
+      "name": "narrative_process_diagram",
+      "description": "Sequential panels or flow arrows showing a design or social process over time",
+      "typical_use": "Explaining transformation, phasing, user journeys"
+    },
+    {
+      "name": "programme_stack_diagram",
+      "description": "Stacked horizontal bands colour-coded by programme type with labels",
+      "typical_use": "Vertical programme distribution in towers or mixed-use buildings"
+    },
+    {
+      "name": "facade_diagram",
+      "description": "Elevation with annotated layers showing facade system, apertures, and solar strategy",
+      "typical_use": "Building skin performance, facade articulation, glazing ratios"
+    },
+    {
+      "name": "environmental_diagram",
+      "description": "Arrows and gradient fills showing sun, wind, water, or energy flows",
+      "typical_use": "Passive design strategies, environmental performance, climate response"
+    }
+  ],
+
+  "human_figures": {
+    "style":      "flat black silhouette",
+    "detail":     "none — no facial features, no clothing detail",
+    "colour":     "#1A1A1A",
+    "scale_use":  ["1:100", "1:200"],
+    "note":       "Always include at least one figure to establish human scale. Groups of 2-4 preferred."
+  },
+
+  "typography": {
+    "primary": {
+      "style":   "bold uppercase sans-serif",
+      "use":     "Zone labels, programme names, key headings",
+      "example": "LIVING / CORE / PUBLIC REALM"
+    },
+    "secondary": {
+      "style":   "light sans-serif, sentence case",
+      "use":     "Annotations, dimensions, callout text",
+      "example": "structural concrete core, 300mm slab"
+    },
+    "rule": "No serif fonts anywhere in BIG diagrams"
+  },
+
+  "hatching": {
+    "concrete":     { "pattern": "diagonal lines at 45°", "spacing": "3mm" },
+    "insulation":   { "pattern": "wavy horizontal lines", "spacing": "4mm" },
+    "structure":    { "pattern": "solid black fill", "note": "primary structural members" },
+    "glazing":      { "pattern": "light grey fill #E8E8E8", "note": "transparent surfaces" },
+    "earth":        { "pattern": "diagonal cross-hatch", "spacing": "5mm" }
+  },
+
+  "signature_elements": [
+    "isometric projection without vanishing points",
+    "programme colour coding with orange as primary accent",
+    "human scale always shown — never scaleless",
+    "bold graphic contrast — no gradients or shadows",
+    "deliberate white space — negative space is design",
+    "orange accent for circulation or highlight zones",
+    "annotation leaders with short text blocks",
+    "bold enclosing shapes for programme zones"
+  ],
+
+  "prompt_building": {
+    "required_tokens": ["BIG_arch_diagram"],
+    "palette_tokens":  ["white background", "bold black structural line weights", "orange accent fills #FF5A1F"],
+    "figure_tokens":   ["flat black human silhouettes for scale"],
+    "annotation_tokens": ["bold sans-serif zone labels", "thin callout annotation lines"],
+    "negative_tokens": [
+      "photorealistic", "3d render", "blurry", "noisy", "watermark",
+      "gradient background", "colour photograph", "sketchy", "hand-drawn", "low contrast"
+    ]
+  }
+}
