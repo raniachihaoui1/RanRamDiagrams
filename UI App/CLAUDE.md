@@ -62,6 +62,11 @@ cd frontend; npm run build          # production build (typechecks too)
 - **Rhino** (`components/rhino/RhinoLiveView.tsx`): viewer of `/ws/rhino`; opened from a button in the generator header. "Use frame as reference" uploads the current frame and sets it as the img2img reference (`useGeneratorStore.getState().setReference`). The Rhino side is `rhino/viewport_stream.py` (stub) + `rhino/PROTOCOL.md`.
 - **Train** (`app/(app)/train/page.tsx`): a config form that creates scaffold runs + lists them. Real GPU training is deferred to the repo's x-flux pipeline.
 
+## Deploy & verification
+
+- Frontend builds to **standalone** output (`next.config.ts` `output: "standalone"`); `frontend/Dockerfile` + `backend/Dockerfile` + `docker-compose.yml` cover deploy (`docker compose up --build`). `storage/` and `models/` mount as volumes.
+- The full mock flow is verified end-to-end: generate → job WS → images persisted → library → file serving → CORS, and all six routes render. When debugging, note `next dev` falls back to **:3001** if :3000 is taken — check the dev log for the actual port.
+
 ## Architecture notes
 
 - **Config is centralized** in `backend/app/config.py` (`Settings` via pydantic-settings, reads `.env`). All paths resolve relative to `UI App/` unless absolute. `get_settings()` is cached; `settings.ensure_dirs()` runs on startup (lifespan).
