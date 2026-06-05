@@ -50,6 +50,12 @@ cd frontend; npm run build          # production build (typechecks too)
 - `components/generate/GenerationFeed.tsx` — renders the feed; running generations show N `GeneratingCard` placeholders that swap to results on done.
 - `components/media/ImageModal.tsx` — shared lightbox (download/favorite/delete); reused by the Library.
 
+## Library (Phase 4)
+
+- `app/(app)/library/page.tsx` — fetches all images once (`["images", {limit:1000}]`) and filters client-side (All/Favorites/Generated/Edited/Uploaded, right rail). Two view modes via toggle: **Grid** (date-grouped via `lib/date.groupByDate`, uses `ImageGrid`) and **Cute** (`components/library/CuteLibrary`).
+- `components/library/CuteLibrary.tsx` — the experimental "discs on a shelf": a 3D CSS coverflow on the light `paper` background; arrow keys / wheel / side-click to navigate, center-click opens the modal.
+- Favorite/delete from the modal invalidate `["images"]`, so the library and dashboard stay in sync.
+
 ## Architecture notes
 
 - **Config is centralized** in `backend/app/config.py` (`Settings` via pydantic-settings, reads `.env`). All paths resolve relative to `UI App/` unless absolute. `get_settings()` is cached; `settings.ensure_dirs()` runs on startup (lifespan).
