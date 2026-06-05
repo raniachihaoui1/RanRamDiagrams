@@ -36,6 +36,13 @@ cd frontend; npm run dev            # frontend
 cd frontend; npm run build          # production build (typechecks too)
 ```
 
+## Frontend routes
+
+- `app/page.tsx` — Welcome/landing at `/` (marketing, no sidebar). Uses only the root layout.
+- `app/(app)/layout.tsx` — app shell (Sidebar + scrollable main) wrapping the tool routes: `/dashboard`, `/generate`, `/canvas`, `/train`, `/library`. The `(app)` route group adds no URL segment.
+- `app/providers.tsx` — TanStack Query provider, mounted in the root layout.
+- Data access goes through `lib/api.ts` (typed `api.*` client + `mediaUrl()` to absolutize backend image paths). Backend image URLs are relative; always wrap with `mediaUrl()`.
+
 ## Architecture notes
 
 - **Config is centralized** in `backend/app/config.py` (`Settings` via pydantic-settings, reads `.env`). All paths resolve relative to `UI App/` unless absolute. `get_settings()` is cached; `settings.ensure_dirs()` runs on startup (lifespan).
