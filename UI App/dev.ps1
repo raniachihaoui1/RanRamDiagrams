@@ -25,8 +25,9 @@ $backend = Start-Process -FilePath $python `
     -WorkingDirectory "$root/backend" -PassThru -NoNewWindow
 
 Write-Host "Starting frontend (Next.js) on http://localhost:3000 ..." -ForegroundColor Cyan
-$frontend = Start-Process -FilePath "npm" `
-    -ArgumentList "run", "dev" `
+# npm is npm.cmd on Windows (not a Win32 .exe), so launch it via cmd.exe.
+$frontend = Start-Process -FilePath "cmd.exe" `
+    -ArgumentList "/c", "npm run dev" `
     -WorkingDirectory "$root/frontend" -PassThru -NoNewWindow
 
 Write-Host "`nBoth servers starting. Press Ctrl+C to stop." -ForegroundColor Green
