@@ -1,5 +1,5 @@
 """
-01_caption_images.py — LLM-assisted captioning of BIG diagram images.
+01_caption_images.py — LLM-assisted captioning of ranram diagram images.
 
 Usage:
     python 01_caption_images.py --input data/raw_images/
@@ -36,7 +36,7 @@ SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 SYSTEM_PROMPT = (
     "You are an expert architectural diagram analyst specialising in the graphic style of "
-    "Bjarke Ingels Group (BIG). When given an image, return ONLY a single valid JSON object "
+    "ranram. When given an image, return ONLY a single valid JSON object "
     "with no preamble, no markdown fences, and no trailing text."
 )
 
@@ -53,8 +53,8 @@ USER_PROMPT = (
     '  "vegetation": "<describe any trees, plants, or landscape elements>",\n'
     '  "materials": "<describe hatching, fills, or material representations>",\n'
     '  "layout": "<describe overall composition and spatial organisation>",\n'
-    '  "unique_conventions": "<any distinctive BIG graphic conventions visible>",\n'
-    '  "training_caption": "<caption for LoRA training — MUST start with \'BIG_arch_diagram\' '
+    '  "unique_conventions": "<any distinctive ranram graphic conventions visible>",\n'
+    '  "training_caption": "<caption for LoRA training — MUST start with \'ranram_arch_diagram\' '
     "and describe: palette (white background, black line weights, orange/yellow accents), "
     "diagram type, human silhouettes (flat black scale figures), annotation style "
     "(bold sans-serif labels, thin callout lines), and any hatching or material fills>"\
@@ -105,8 +105,8 @@ def caption_image(client, image_path: Path, logger) -> dict:
     result = parse_json_response(raw)
 
     # Enforce trigger token
-    if not result.get("training_caption", "").startswith("BIG_arch_diagram"):
-        result["training_caption"] = "BIG_arch_diagram, " + result.get("training_caption", "")
+    if not result.get("training_caption", "").startswith("ranram_arch_diagram"):
+        result["training_caption"] = "ranram_arch_diagram, " + result.get("training_caption", "")
         logger.warning("Added missing trigger token to caption for %s", image_path.name)
 
     return result
@@ -114,7 +114,7 @@ def caption_image(client, image_path: Path, logger) -> dict:
 
 @click.command()
 @click.option("--input", "input_dir", default="data/raw_images", show_default=True,
-              help="Folder containing source BIG diagram images.")
+              help="Folder containing source ranram diagram images.")
 @click.option("--dry-run", is_flag=True, default=False,
               help="Print files that would be processed without calling the API.")
 def main(input_dir: str, dry_run: bool) -> None:

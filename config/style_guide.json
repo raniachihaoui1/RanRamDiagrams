@@ -1,5 +1,5 @@
 {
-  "name": "BIG Visual Grammar",
+  "name": "ranram Visual Grammar",
   "version": "1.0",
 
   "colour_palette": {
@@ -79,7 +79,7 @@
       "use":     "Annotations, dimensions, callout text",
       "example": "structural concrete core, 300mm slab"
     },
-    "rule": "No serif fonts anywhere in BIG diagrams"
+    "rule": "No serif fonts anywhere in ranram diagrams"
   },
 
   "hatching": {
@@ -102,7 +102,7 @@
   ],
 
   "prompt_building": {
-    "required_tokens": ["BIG_arch_diagram"],
+    "required_tokens": ["ranram_arch_diagram"],
     "palette_tokens":  ["white background", "bold black structural line weights", "orange accent fills #FF5A1F"],
     "figure_tokens":   ["flat black human silhouettes for scale"],
     "annotation_tokens": ["bold sans-serif zone labels", "thin callout annotation lines"],

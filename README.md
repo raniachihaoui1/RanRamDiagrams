@@ -1,6 +1,6 @@
-# BIG LoRA Training Pipeline
+# ranram LoRA Training Pipeline
 
-Train a FLUX dev LoRA that converts any image or Rhino 3D screenshot into a BIG (Bjarke Ingels Group) architecture diagram — white background, bold black line weights, orange accents, flat black human figures, bold sans-serif annotations.
+Train a FLUX dev LoRA that converts any image or Rhino 3D screenshot into a ranram architecture diagram — white background, bold black line weights, orange accents, flat black human figures, bold sans-serif annotations.
 
 ---
 
@@ -12,7 +12,7 @@ The pipeline has five stages:
 |--------|-------------|
 | `01_caption_images.py` | Claude vision → structured JSON captions + `.txt` sidecar files |
 | `02_generate_controlnet_maps.py` | Canny / depth / lineart conditioning maps from Rhino exports |
-| `03_generate_synthetic_pairs.py` | FLUX dev + ControlNet Union → synthetic BIG-style images |
+| `03_generate_synthetic_pairs.py` | FLUX dev + ControlNet Union → synthetic ranram-style images |
 | `04_critique_and_filter.py` | Claude scores each synthetic image 1–10 and keeps ≥ 7 |
 | `05_prepare_dataset.py` | Validates captions, resizes to 1024×1024, reports stats |
 
@@ -77,9 +77,9 @@ cd x-flux && pip install -e .
 
 ## 5. Preparing Your Images
 
-### BIG diagram scrapes (`data/raw_images/`)
+### ranram diagram scrapes (`data/raw_images/`)
 
-Collect 40–80 high-resolution BIG diagram images. Recommended sources: BIG's official website project pages, Dezeen, ArchDaily. Aim for variety across all eight diagram types listed in `config/style_guide.json`.
+Collect 40–80 high-resolution ranram diagram images. Aim for variety across all eight diagram types listed in `config/style_guide.json`.
 
 Accepted formats: `.png`, `.jpg`, `.jpeg`, `.webp`.
 
@@ -101,13 +101,13 @@ Export screenshots from Rhino with these settings for maximum ControlNet compati
 Run scripts in order. Each script is idempotent — re-running skips already-processed files.
 
 ```bash
-# Step 1 — Caption raw BIG diagrams with Claude
+# Step 1 — Caption raw ranram diagrams with Claude
 python scripts/01_caption_images.py --input data/raw_images/
 
 # Step 2 — Generate conditioning maps from Rhino exports
 python scripts/02_generate_controlnet_maps.py --input data/rhino_exports/
 
-# Step 3 — Generate synthetic BIG-style pairs (requires GPU)
+# Step 3 — Generate synthetic ranram-style pairs (requires GPU)
 python scripts/03_generate_synthetic_pairs.py \
     --model_path models/flux1-dev.safetensors
 
@@ -126,7 +126,7 @@ Use `--dry-run` on scripts 01 and 04 to preview what will be processed without A
 
 ## 7. Training
 
-Once the dataset is ready (`data/dataset/img/10_BIG_style_diagram/` contains ≥ 40 images with `.txt` sidecars):
+Once the dataset is ready (`data/dataset/img/10_ranram_style_diagram/` contains ≥ 40 images with `.txt` sidecars):
 
 ```bash
 # From inside the x-flux directory
@@ -180,7 +180,7 @@ Install via ComfyUI Manager or manually:
 1. Place `big_style_flux.safetensors` in `ComfyUI/models/loras/`
 2. Place `flux1-dev.safetensors` in `ComfyUI/models/checkpoints/`
 3. Place the ControlNet model in `ComfyUI/models/controlnet/`
-4. Open ComfyUI → Load → select `comfyui/rhino_to_BIG_flux_workflow.json`
+4. Open ComfyUI → Load → select `comfyui/rhino_to_BIG_flux_workflow.json` (filename unchanged)
 5. Set the LoadImage node to your Rhino screenshot
 6. Queue — **Variant A** (denoise 0.75) and **Variant B** (denoise 0.55) run in parallel
 
@@ -190,7 +190,7 @@ Install via ComfyUI Manager or manually:
 
 | Problem | Fix |
 |---------|-----|
-| Style too weak / not BIG enough | Increase LoRA strength to 1.0; lower denoise to 0.6 |
+| Style too weak / not ranram enough | Increase LoRA strength to 1.0; lower denoise to 0.6 |
 | Rhino geometry lost or distorted | Lower denoise to 0.5; increase ControlNet strength to 0.8 |
 | Wrong colours (not white bg + orange) | Add `"white background, orange accent fills #FF5A1F"` explicitly to every prompt |
 | Human figures missing | Add `"flat black human silhouettes at 1:100 scale"` to the positive prompt |

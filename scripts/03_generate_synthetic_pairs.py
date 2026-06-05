@@ -1,5 +1,5 @@
 """
-03_generate_synthetic_pairs.py — Generate synthetic BIG-style image pairs using FLUX + ControlNet.
+03_generate_synthetic_pairs.py — Generate synthetic ranram-style image pairs using FLUX + ControlNet.
 
 Usage:
     python 03_generate_synthetic_pairs.py --model_path models/flux1-dev.safetensors
@@ -45,7 +45,7 @@ def _check_dependencies() -> bool:
 
 def build_positive_prompt(diagram_type: str) -> str:
     return (
-        f"BIG_arch_diagram, {diagram_type}, white background, bold black structural line weights, "
+        f"ranram_arch_diagram, {diagram_type}, white background, bold black structural line weights, "
         "flat black human silhouettes for scale, orange accent fills #FF5A1F, sans-serif annotations, "
         "architectural section hatching, clean graphic design, high contrast"
     )

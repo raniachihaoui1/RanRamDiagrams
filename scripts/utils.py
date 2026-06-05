@@ -1,4 +1,4 @@
-"""Shared utilities for the BIG LoRA training pipeline."""
+"""Shared utilities for the ranram LoRA training pipeline."""
 
 from __future__ import annotations
 

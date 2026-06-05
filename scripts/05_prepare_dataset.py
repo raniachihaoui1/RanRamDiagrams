@@ -3,7 +3,7 @@
 
 Usage:
     python 05_prepare_dataset.py
-    python 05_prepare_dataset.py --resolution 1024 --input data/dataset/img/10_BIG_style_diagram/
+    python 05_prepare_dataset.py --resolution 1024 --input data/raw_images/
 """
 
 from __future__ import annotations
@@ -20,8 +20,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from utils import get_logger
 
 REPO_ROOT = Path(__file__).parent.parent
-DEFAULT_DATASET_DIR = REPO_ROOT / "data" / "dataset" / "img" / "10_BIG_style_diagram"
-TRIGGER_TOKEN = "BIG_arch_diagram"
+DEFAULT_DATASET_DIR = REPO_ROOT / "data" / "raw_images"
+TRIGGER_TOKEN = "ranram_arch_diagram"
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 MIN_DATASET_SIZE = 40
 
@@ -61,7 +61,7 @@ def extract_diagram_type(caption: str) -> str:
 
 @click.command()
 @click.option("--input", "input_dir", default=None,
-              help="Dataset folder to validate and resize. Defaults to data/dataset/img/10_BIG_style_diagram/.")
+              help="Dataset folder to validate and resize. Defaults to data/raw_images/.")
 @click.option("--resolution", default=1024, show_default=True, type=int,
               help="Target resolution (square). Images are padded, not stretched.")
 @click.option("--no-resize", is_flag=True, default=False,
@@ -84,17 +84,19 @@ def main(input_dir: str | None, resolution: int, no_resize: bool) -> None:
         sys.exit(1)
 
     # -----------------------------------------------------------------------
-    # Caption validation
+    # Caption validation — skip images without a .txt sidecar
     # -----------------------------------------------------------------------
     missing_captions: list[Path] = []
     bad_trigger: list[Path] = []
     word_counts: list[int] = []
     diagram_type_counts: Counter = Counter()
+    captioned_images: list[Path] = []
 
     for img_path in images:
         txt_path = img_path.with_suffix(".txt")
         if not txt_path.exists():
             missing_captions.append(img_path)
+            logger.warning("Skipping %s — no caption file found", img_path.name)
             continue
 
         caption = txt_path.read_text(encoding="utf-8").strip()
@@ -103,13 +105,14 @@ def main(input_dir: str | None, resolution: int, no_resize: bool) -> None:
 
         word_counts.append(len(caption.split()))
         diagram_type_counts[extract_diagram_type(caption)] += 1
+        captioned_images.append(img_path)
 
     # -----------------------------------------------------------------------
-    # Resize to target resolution (white-padded square)
+    # Resize only captioned images to target resolution (white-padded square)
     # -----------------------------------------------------------------------
     resized_count = 0
     if not no_resize:
-        for img_path in tqdm(images, desc=f"Resizing to {resolution}x{resolution}", unit="img"):
+        for img_path in tqdm(captioned_images, desc=f"Resizing to {resolution}x{resolution}", unit="img"):
             try:
                 with Image.open(img_path) as img:
                     img = img.convert("RGB")
@@ -124,7 +127,7 @@ def main(input_dir: str | None, resolution: int, no_resize: bool) -> None:
     # Report
     # -----------------------------------------------------------------------
     total = len(images)
-    captioned = total - len(missing_captions)
+    captioned = len(captioned_images)
     wc_min = min(word_counts) if word_counts else 0
     wc_mean = sum(word_counts) / len(word_counts) if word_counts else 0.0
     wc_max = max(word_counts) if word_counts else 0
@@ -144,15 +147,15 @@ def main(input_dir: str | None, resolution: int, no_resize: bool) -> None:
         click.echo(f"    {dt:<35} {count}")
     click.echo("=" * 54)
 
-    if total < MIN_DATASET_SIZE:
+    if captioned < MIN_DATASET_SIZE:
         click.echo(
-            f"\n  WARNING: Dataset has only {total} images — recommended minimum is {MIN_DATASET_SIZE}.\n"
-            "  Run scripts 03 and 04 again to generate more synthetic pairs.\n"
+            f"\n  WARNING: Only {captioned} captioned images — recommended minimum is {MIN_DATASET_SIZE}.\n"
+            "  Add more images and captions to improve LoRA quality.\n"
         )
-        logger.warning("Dataset size %d is below minimum %d", total, MIN_DATASET_SIZE)
+        logger.warning("Captioned dataset size %d is below minimum %d", captioned, MIN_DATASET_SIZE)
 
     if missing_captions:
-        click.echo("\n  Images without captions:")
+        click.echo(f"\n  Skipped {len(missing_captions)} image(s) with no caption:")
         for p in missing_captions:
             click.echo(f"    {p.name}")
 
@@ -160,14 +163,11 @@ def main(input_dir: str | None, resolution: int, no_resize: bool) -> None:
         click.echo(f"\n  Images with captions not starting with '{TRIGGER_TOKEN}':")
         for p in bad_trigger:
             click.echo(f"    {p.name}")
-
-    if missing_captions or bad_trigger:
-        logger.error("Dataset has %d missing captions and %d bad trigger tokens — fix before training.",
-                     len(missing_captions), len(bad_trigger))
+        logger.error("%d bad trigger tokens — fix before training.", len(bad_trigger))
         sys.exit(1)
 
-    logger.info("Dataset validated. %d images ready for training.", total)
-    click.echo("\n  Dataset is ready for training.\n")
+    logger.info("Dataset validated. %d images ready for training.", captioned)
+    click.echo(f"\n  {captioned} images ready for training.\n")
 
 
 if __name__ == "__main__":

@@ -29,17 +29,17 @@ from utils import (
 )
 
 REPO_ROOT = Path(__file__).parent.parent
-DATASET_DIR = REPO_ROOT / "data" / "dataset" / "img" / "10_BIG_style_diagram"
+DATASET_DIR = REPO_ROOT / "data" / "dataset" / "img" / "10_ranram_style_diagram"
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 CRITIQUE_SYSTEM = (
     "You are a senior architectural diagram critic specialising in the visual identity of "
-    "Bjarke Ingels Group (BIG). When given an image, return ONLY a valid JSON object "
+    "ranram. When given an image, return ONLY a valid JSON object "
     "with no preamble, no markdown fences, and no trailing text."
 )
 
 CRITIQUE_USER = (
-    "Score this image on its fidelity to BIG's diagram style. Return a JSON object with these keys:\n"
+    "Score this image on its fidelity to ranram's diagram style. Return a JSON object with these keys:\n"
     "{\n"
     '  "palette_match": <integer 1-10>,\n'
     '  "palette_reason": "<brief note>",\n'
@@ -49,12 +49,12 @@ CRITIQUE_USER = (
     '  "clarity_reason": "<brief note>",\n'
     '  "human_scale": <integer 1-10>,\n'
     '  "human_reason": "<brief note>",\n'
-    '  "BIG_signature": <integer 1-10>,\n'
+    '  "ranram_signature": <integer 1-10>,\n'
     '  "signature_reason": "<brief note>",\n'
     '  "overall": <float, weighted average>,\n'
     '  "keep": <true|false>,\n'
     '  "reason": "<one sentence overall verdict>",\n'
-    '  "improved_caption": "<improved LoRA training caption starting with \'BIG_arch_diagram\'>"\n'
+    '  "improved_caption": "<improved LoRA training caption starting with \'ranram_arch_diagram\'>"\n'
     "}\n\n"
     "Scoring guidance:\n"
     "- palette_match: white background, black line weights, orange/yellow accents — "
@@ -62,7 +62,7 @@ CRITIQUE_USER = (
     "- line_quality: clean bold architectural weight, no sketchy or noisy lines — weight 0.25\n"
     "- diagram_clarity: legible hierarchy, readable annotations, clear spatial intent — weight 0.25\n"
     "- human_scale: flat black silhouettes present and correctly proportioned — weight 0.15\n"
-    "- BIG_signature: unmistakably BIG, not generic arch diagram — weight 0.15\n"
+    "- ranram_signature: unmistakably ranram, not generic arch diagram — weight 0.15\n"
     "Set keep=true if the weighted overall >= the threshold passed by the caller.\n"
     "Compute overall as: 0.20*palette + 0.25*line + 0.25*clarity + 0.15*human + 0.15*sig"
 )
@@ -127,7 +127,7 @@ def print_summary_table(results: list[dict], threshold: float) -> None:
 @click.option("--threshold", default=7.0, show_default=True, type=float,
               help="Minimum overall score (1-10) to keep an image.")
 @click.option("--output", "output_dir", default=None,
-              help="Destination folder for kept images. Defaults to data/dataset/img/10_BIG_style_diagram/.")
+              help="Destination folder for kept images. Defaults to data/dataset/img/10_ranram_style_diagram/.")
 @click.option("--dry-run", is_flag=True, default=False,
               help="Print what would be processed without calling the API.")
 def main(input_dir: str, threshold: float, output_dir: str | None, dry_run: bool) -> None:
@@ -178,8 +178,8 @@ def main(input_dir: str, threshold: float, output_dir: str | None, dry_run: bool
                 dest_img = out_path / img_path.name
                 shutil.copy2(img_path, dest_img)
                 improved_caption = result.get("improved_caption", "")
-                if not improved_caption.startswith("BIG_arch_diagram"):
-                    improved_caption = "BIG_arch_diagram, " + improved_caption
+                if not improved_caption.startswith("ranram_arch_diagram"):
+                    improved_caption = "ranram_arch_diagram, " + improved_caption
                 (out_path / img_path.with_suffix(".txt").name).write_text(
                     improved_caption, encoding="utf-8"
                 )

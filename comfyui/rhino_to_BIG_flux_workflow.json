@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "title": "Rhino → BIG Style — FLUX dev + ControlNet Union + LoRA",
+    "title": "Rhino → ranram Style — FLUX dev + ControlNet Union + LoRA",
     "description": "Two workflow variants. Variant A (denoise 0.75) for full style transfer. Variant B (denoise 0.55) for geometry-preserving light transfer.",
     "version": "1.0",
     "required_custom_nodes": [
@@ -82,7 +82,7 @@
     {
       "id": 6,
       "type": "LoraLoader",
-      "title": "Load BIG LoRA",
+      "title": "Load ranram LoRA",
       "pos": [360, 300],
       "size": [300, 90],
       "inputs": [
@@ -93,7 +93,7 @@
         {"name": "MODEL", "type": "MODEL", "links": [10]},
         {"name": "CLIP",  "type": "CLIP",  "links": [11, 12]}
       ],
-      "widgets_values": ["big_style_flux.safetensors", 0.9, 0.9]
+      "widgets_values": ["ranram_style_flux.safetensors", 0.9, 0.9]
     },
 
     {
@@ -134,7 +134,7 @@
       "inputs":  [{"name": "clip", "type": "CLIP", "link": 11}],
       "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [14]}],
       "widgets_values": [
-        "BIG_arch_diagram, axonometric section diagram, white background, bold black architectural line weights, flat black human silhouettes for scale, orange accent fills #FF5A1F, sans-serif zone labels, thin callout annotation lines, architectural hatching for concrete sections, high contrast graphic design, programme colour coding"
+        "ranram_arch_diagram, axonometric section diagram, white background, bold black architectural line weights, flat black human silhouettes for scale, orange accent fills #FF5A1F, sans-serif zone labels, thin callout annotation lines, architectural hatching for concrete sections, high contrast graphic design, programme colour coding"
       ]
     },
 
@@ -198,7 +198,7 @@
       "pos": [1520, 400],
       "size": [200, 60],
       "inputs": [{"name": "images", "type": "IMAGE", "link": 22}],
-      "widgets_values": ["BIG_style_variantA"]
+      "widgets_values": ["ranram_style_variantA"]
     },
 
     {
@@ -208,7 +208,7 @@
       "pos": [900, 650],
       "size": [600, 80],
       "widgets_values": [
-        "Duplicate nodes 12-14 below and set KSampler denoise to 0.55. This preserves more Rhino geometry while applying the BIG style. Useful when the original model geometry must remain readable. Increase ControlNet strength to 0.75 for tighter edge fidelity."
+        "Duplicate nodes 12-14 below and set KSampler denoise to 0.55. This preserves more Rhino geometry while applying the ranram style. Useful when the original model geometry must remain readable. Increase ControlNet strength to 0.75 for tighter edge fidelity."
       ],
       "color": "#432",
       "bgcolor": "#653"
@@ -250,7 +250,7 @@
       "pos": [1520, 760],
       "size": [200, 60],
       "inputs": [{"name": "images", "type": "IMAGE", "link": 31}],
-      "widgets_values": ["BIG_style_variantB"]
+      "widgets_values": ["ranram_style_variantB"]
     }
 
   ],

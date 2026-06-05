@@ -1,5 +1,5 @@
 # =============================================================================
-# FLUX LoRA Training Config — BIG Architecture Diagram Style
+# FLUX LoRA Training Config — ranram Architecture Diagram Style
 # Targets: x-flux trainer (primary) / kohya_ss FLUX branch (fallback)
 # =============================================================================
 
@@ -9,7 +9,7 @@ pretrained_model_name_or_path = "models/flux1-dev.safetensors"
 ae                      = "models/ae.safetensors"
 clip_l                  = "models/clip_l.safetensors"
 t5xxl                   = "models/t5xxl_fp16.safetensors"
-output_name             = "big_style_flux"
+output_name             = "ranram_style_flux"
 output_dir              = "output"
 save_model_as           = "safetensors"
 log_with                = "tensorboard"
@@ -81,6 +81,6 @@ batch_size              = 1
 enable_bucket           = false
 
   [[datasets.subsets]]
-  image_dir             = "data/dataset/img/10_BIG_style_diagram"
+  image_dir             = "data/dataset/img/10_ranram_style_diagram"
   caption_extension     = ".txt"
   num_repeats           = 3
