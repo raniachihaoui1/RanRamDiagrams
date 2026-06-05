@@ -1,0 +1,36 @@
+# ---- Node / Next.js ----
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+frontend/next-env.d.ts
+npm-debug.log*
+
+# ---- Python ----
+backend/.venv/
+backend/venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ---- Env ----
+.env
+.env.local
+*.local
+
+# ---- Storage (generated content — keep folders, ignore contents) ----
+storage/images/*
+storage/thumbnails/*
+storage/uploads/*
+storage/canvas_projects/*
+storage/app.db
+!storage/**/.gitkeep
+
+# ---- Models (large binaries — keep folders + READMEs only) ----
+models/**/*.safetensors
+models/**/*.ckpt
+models/**/*.pt
+models/**/*.pth
+models/**/*.bin
+models/**/*.gguf
+!models/**/README.md
