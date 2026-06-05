@@ -43,6 +43,13 @@ cd frontend; npm run build          # production build (typechecks too)
 - `app/providers.tsx` — TanStack Query provider, mounted in the root layout.
 - Data access goes through `lib/api.ts` (typed `api.*` client + `mediaUrl()` to absolutize backend image paths). Backend image URLs are relative; always wrap with `mediaUrl()`.
 
+## Generator (Phase 3)
+
+- State lives in `store/generator.ts` (Zustand): prompt-bar settings (prompt, model, loras[], aspect, count, seed, negative, mode, referenceImage, referenceWeight) + a `generations[]` feed. `submit()` posts `/api/generate`, prepends a running `Generation`, then opens a WS via `lib/ws.openJobSocket` and patches that generation as `progress`/`done`/`error` arrive. Pass `afterDone` to invalidate the `["images"]` query.
+- `components/generate/PromptBar.tsx` — the floating glass bar: chips (Model, LoRA multi-select, Aspect, Reference upload→img2img, Count 1–4, Settings) using `components/ui/Popover` + `Slider`. img2img is the same page: uploading a reference switches `mode` and reveals the weight slider.
+- `components/generate/GenerationFeed.tsx` — renders the feed; running generations show N `GeneratingCard` placeholders that swap to results on done.
+- `components/media/ImageModal.tsx` — shared lightbox (download/favorite/delete); reused by the Library.
+
 ## Architecture notes
 
 - **Config is centralized** in `backend/app/config.py` (`Settings` via pydantic-settings, reads `.env`). All paths resolve relative to `UI App/` unless absolute. `get_settings()` is cached; `settings.ensure_dirs()` runs on startup (lifespan).
