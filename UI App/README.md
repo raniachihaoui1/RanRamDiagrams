@@ -36,6 +36,9 @@ Copy-Item .env.example .env
 
 Then open http://localhost:3000.
 
+> If port 3000 is already in use, Next.js falls back to **:3001** (it prints the
+> actual URL in the dev log). The backend always uses :8000.
+
 ### Run servers individually
 
 ```powershell
