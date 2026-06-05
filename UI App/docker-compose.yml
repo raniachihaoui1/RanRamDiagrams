@@ -1,0 +1,25 @@
+# Deploy infra. For local dev prefer ./dev.ps1 (faster hot-reload).
+# Usage: docker compose up --build
+services:
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
+      - ./models:/app/models
+      - ./workflows:/app/workflows
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped

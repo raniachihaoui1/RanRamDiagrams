@@ -4,6 +4,33 @@ Train a FLUX dev LoRA that converts any image or Rhino 3D screenshot into a BIG 
 
 ---
 
+## UI App (web interface)
+
+A Krea-style web app that uses these LoRAs with ComfyUI workflows (generate, image-to-image, canvas editor, library, Rhino bridge) lives in [`UI App/`](UI%20App/). It runs fully in **mock mode** (no GPU/ComfyUI needed) so you can try the whole UI immediately.
+
+**Quick start (Windows / PowerShell):**
+
+```powershell
+cd "UI App"
+
+# 1. Backend deps
+python -m venv backend/.venv
+backend/.venv/Scripts/pip install -r backend/requirements.txt
+
+# 2. Frontend deps
+cd frontend; npm install; cd ..
+
+# 3. Env
+Copy-Item .env.example .env
+
+# 4. Run both (backend :8000 + frontend :3000)
+./dev.ps1
+```
+
+Then open http://localhost:3000 (if 3000 is busy, Next falls back to :3001 — check the dev log). Full details, deploy, and going mock → real ComfyUI are in [`UI App/README.md`](UI%20App/README.md).
+
+---
+
 ## 1. Overview
 
 The pipeline has five stages:

@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   Design tokens — neutral monochrome, Apple-like.
+   Dark base; color comes from generated content, not the chrome.
+   ========================================================================= */
+@theme {
+  /* Surfaces (dark, layered) */
+  --color-base: #0a0a0b;
+  --color-surface: #16171a;
+  --color-surface-2: #1d1e22;
+  --color-elevated: #26272c;
+  --color-border: #2a2b30;
+  --color-border-strong: #3a3b42;
+
+  /* Text */
+  --color-foreground: #f5f5f7;
+  --color-muted: #a1a1aa;
+  --color-faint: #6b6b73;
+
+  /* Single neutral "accent" = near-white for active states */
+  --color-accent: #fafafa;
+  --color-accent-foreground: #0a0a0b;
+
+  /* Light surfaces (Cute Library mode lives on white) */
+  --color-paper: #f4f4f5;
+  --color-paper-ink: #18181b;
+
+  /* Radii — generous, Apple-like */
+  --radius-pill: 9999px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  /* Soft, layered shadows */
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 40px rgba(0, 0, 0, 0.45);
+
+  /* Fonts (wired in layout.tsx) */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* =========================================================================
+   Utilities
+   ========================================================================= */
+@layer utilities {
+  /* Frosted glass panel */
+  .glass {
+    background-color: color-mix(in srgb, var(--color-surface) 70%, transparent);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  }
+
+  .glass-strong {
+    background-color: color-mix(in srgb, var(--color-surface-2) 82%, transparent);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid var(--color-border);
+  }
+
+  /* Hide scrollbars but keep scroll */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-thickness: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Thin, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-strong);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
