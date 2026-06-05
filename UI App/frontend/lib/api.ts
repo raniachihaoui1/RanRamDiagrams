@@ -51,6 +51,46 @@ export interface GenerateRequest {
   reference_weight?: number;
 }
 
+export interface CanvasOut {
+  id: string;
+  name: string;
+  data: CanvasData;
+  thumb_url: string | null;
+  updated_at: string;
+}
+
+// Canvas document model (kept in sync with store/canvas.ts)
+export interface CanvasOp {
+  kind: "stroke" | "shape";
+  tool: string;
+  color: string;
+  size: number;
+  points?: number[];
+  x0?: number;
+  y0?: number;
+  x1?: number;
+  y1?: number;
+}
+export interface CanvasLayer {
+  id: string;
+  name: string;
+  visible: boolean;
+  ops: CanvasOp[];
+}
+export interface CanvasData {
+  baseImageId: string | null;
+  width: number;
+  height: number;
+  layers: CanvasLayer[];
+}
+
+export interface TrainOut {
+  id: string;
+  status: string;
+  config: Record<string, unknown>;
+  created_at: string;
+}
+
 // ---- Helpers --------------------------------------------------------------
 /** Turn a relative backend path (e.g. ImageOut.url) into an absolute URL. */
 export function mediaUrl(path: string | null | undefined): string {
@@ -103,4 +143,20 @@ export const api = {
   generate: (body: GenerateRequest) =>
     req<JobOut>("/api/generate", { method: "POST", body: JSON.stringify(body) }),
   getJob: (id: string) => req<JobOut>(`/api/jobs/${id}`),
+
+  // Canvas projects
+  createCanvas: (body: { name: string; data: CanvasData }) =>
+    req<CanvasOut>("/api/canvas", { method: "POST", body: JSON.stringify(body) }),
+  listCanvas: () => req<CanvasOut[]>("/api/canvas"),
+  getCanvas: (id: string) => req<CanvasOut>(`/api/canvas/${id}`),
+  updateCanvas: (
+    id: string,
+    body: { name?: string; data?: CanvasData; thumb_data_url?: string }
+  ) => req<CanvasOut>(`/api/canvas/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteCanvas: (id: string) => req<void>(`/api/canvas/${id}`, { method: "DELETE" }),
+
+  // Training (scaffold)
+  createTraining: (body: { name: string; config: Record<string, unknown> }) =>
+    req<TrainOut>("/api/train", { method: "POST", body: JSON.stringify(body) }),
+  listTraining: () => req<TrainOut[]>("/api/train"),
 };

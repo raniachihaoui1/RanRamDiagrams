@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.db import init_db
-from app.routers import catalog, generate, health, images, uploads
+from app.routers import canvas, catalog, generate, health, images, rhino, train, uploads
 
 
 @asynccontextmanager
@@ -42,7 +42,9 @@ def create_app() -> FastAPI:
     app.include_router(images.router)
     app.include_router(uploads.router)
     app.include_router(generate.router)
-    # Phase 5 routers (canvas, train, rhino) are added here.
+    app.include_router(canvas.router)
+    app.include_router(train.router)
+    app.include_router(rhino.router)
 
     return app
 

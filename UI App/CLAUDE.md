@@ -56,6 +56,12 @@ cd frontend; npm run build          # production build (typechecks too)
 - `components/library/CuteLibrary.tsx` — the experimental "discs on a shelf": a 3D CSS coverflow on the light `paper` background; arrow keys / wheel / side-click to navigate, center-click opens the modal.
 - Favorite/delete from the modal invalidate `["images"]`, so the library and dashboard stay in sync.
 
+## Canvas, Rhino, Train (Phase 5)
+
+- **Canvas** (`app/(app)/canvas/page.tsx`): plain HTML5 `<canvas>` with vector-op replay (no Konva). State in `store/canvas.ts` — a document of `layers[]` (each with `ops[]`), tools (brush/eraser/rect/ellipse/line/arrow), color/size, undo. `CanvasStage` re-renders base image + visible layers each frame; eraser uses `destination-out`. `CanvasSidePanel` does base-image pick/upload, layers, and **Generate** (flattens canvas → uploads → img2img via the existing job flow) + **Save** (persists project + a flattened thumbnail). Coordinates are stored in document pixel space; pointer events are scaled from the displayed canvas rect.
+- **Rhino** (`components/rhino/RhinoLiveView.tsx`): viewer of `/ws/rhino`; opened from a button in the generator header. "Use frame as reference" uploads the current frame and sets it as the img2img reference (`useGeneratorStore.getState().setReference`). The Rhino side is `rhino/viewport_stream.py` (stub) + `rhino/PROTOCOL.md`.
+- **Train** (`app/(app)/train/page.tsx`): a config form that creates scaffold runs + lists them. Real GPU training is deferred to the repo's x-flux pipeline.
+
 ## Architecture notes
 
 - **Config is centralized** in `backend/app/config.py` (`Settings` via pydantic-settings, reads `.env`). All paths resolve relative to `UI App/` unless absolute. `get_settings()` is cached; `settings.ensure_dirs()` runs on startup (lifespan).
@@ -73,6 +79,9 @@ cd frontend; npm run build          # production build (typechecks too)
 - `WS /ws/jobs/{id}` — streams `snapshot` → `progress`* → `done`(with full image payloads) | `error`.
 - `GET /api/images` (filters: kind, favorite, limit, offset), `GET /api/images/{id}`, `PATCH` (favorite/tags), `DELETE`, `GET /api/images/{id}/file|thumb`.
 - `POST /api/upload` — multipart reference image → stored as `kind=uploaded`.
+- `POST/GET /api/canvas`, `GET/PUT/DELETE /api/canvas/{id}`, `GET /api/canvas/{id}/thumb` — canvas projects (data JSON + optional thumbnail from a PNG data URL).
+- `POST/GET /api/train`, `GET /api/train/{id}` — training-run **scaffold** (records config; no GPU execution yet).
+- `WS /ws/rhino?role=source|viewer` + `GET /api/rhino/status` — Rhino viewport relay hub (forwards frames source→viewers).
 
 Generation flow: `routers/generate` → `services/jobs.JobManager` (in-memory pub/sub + asyncio task) → `comfy.factory.get_comfy_client()` → `services/storage.save_image_bytes` (PNG + WebP thumb + DB row). Image URLs are built in `app/serializers.image_to_out`.
 

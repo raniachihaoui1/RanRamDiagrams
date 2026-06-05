@@ -66,3 +66,40 @@ class ModelInfo(BaseModel):
     kind: str  # checkpoint|lora
     builtin: bool = False
     trigger_token: str | None = None
+
+
+# ---- Canvas ----
+class CanvasCreate(BaseModel):
+    name: str = "Untitled canvas"
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
+class CanvasUpdate(BaseModel):
+    name: str | None = None
+    data: dict[str, Any] | None = None
+    thumb_data_url: str | None = None  # optional PNG data URL to store as thumbnail
+
+
+class CanvasOut(BaseModel):
+    id: str
+    name: str
+    data: dict[str, Any]
+    thumb_url: str | None = None
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ---- Training (scaffold) ----
+class TrainCreate(BaseModel):
+    name: str = "Untitled run"
+    config: dict[str, Any] = Field(default_factory=dict)
+
+
+class TrainOut(BaseModel):
+    id: str
+    status: str
+    config: dict[str, Any]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
