@@ -13,13 +13,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import health
+from app.db import init_db
+from app.routers import catalog, generate, health, images, uploads
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     settings.ensure_dirs()
+    init_db()
     yield
 
 
@@ -36,7 +38,11 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
-    # Phase 1+ routers (images, generate, models, canvas, train, rhino) are added here.
+    app.include_router(catalog.router)
+    app.include_router(images.router)
+    app.include_router(uploads.router)
+    app.include_router(generate.router)
+    # Phase 5 routers (canvas, train, rhino) are added here.
 
     return app
 
