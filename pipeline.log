@@ -132,3 +132,37 @@ PROCESSED C:\Users\Win11\ranramdiagrams_lora_pipeline\data\raw_images\24.png
 2026-06-05 10:16:26,180  WARNING   05_prepare_dataset  Skipping 26.png — no caption file found
 2026-06-05 10:16:26,384  WARNING   05_prepare_dataset  Captioned dataset size 17 is below minimum 40
 2026-06-05 10:16:26,385  INFO      05_prepare_dataset  Dataset validated. 17 images ready for training.
+2026-06-05 18:59:58,301  INFO      01_caption  Found 26 images, 17 already processed, 9 to process
+2026-06-05 18:59:59,576  ERROR     01_caption  Failed to caption 07.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,581  ERROR     01_caption  Failed to caption 14.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,584  ERROR     01_caption  Failed to caption 15.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,588  ERROR     01_caption  Failed to caption 18.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,590  ERROR     01_caption  Failed to caption 07.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,593  ERROR     01_caption  Failed to caption 14.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,596  ERROR     01_caption  Failed to caption 15.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,596  ERROR     01_caption  Failed to caption 19.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,600  ERROR     01_caption  Failed to caption 18.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,604  ERROR     01_caption  Failed to caption 20.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,607  ERROR     01_caption  Failed to caption 19.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,609  ERROR     01_caption  Failed to caption 23.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,613  ERROR     01_caption  Failed to caption 25.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,615  ERROR     01_caption  Failed to caption 20.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,617  ERROR     01_caption  Failed to caption 26.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,619  INFO      01_caption  Done. Captioned 0, failed 9.
+2026-06-05 18:59:59,619  WARNING   01_caption  Failed files: ['07.png', '14.png', '15.png', '18.png', '19.png', '20.png', '23.png', '25.png', '26.png']
+2026-06-05 18:59:59,619  ERROR     01_caption  Failed to caption 23.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,623  ERROR     01_caption  Failed to caption 25.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,627  ERROR     01_caption  Failed to caption 26.png: "Could not resolve authentication method. Expected one of api_key, auth_token, or credentials to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted"
+2026-06-05 18:59:59,628  INFO      01_caption  Done. Captioned 0, failed 9.
+2026-06-05 18:59:59,628  WARNING   01_caption  Failed files: ['07.png', '14.png', '15.png', '18.png', '19.png', '20.png', '23.png', '25.png', '26.png']
+2026-06-05 19:00:17,867  WARNING   05_prepare_dataset  Skipping 07.png — no caption file found
+2026-06-05 19:00:17,871  WARNING   05_prepare_dataset  Skipping 14.png — no caption file found
+2026-06-05 19:00:17,871  WARNING   05_prepare_dataset  Skipping 15.png — no caption file found
+2026-06-05 19:00:17,872  WARNING   05_prepare_dataset  Skipping 18.png — no caption file found
+2026-06-05 19:00:17,872  WARNING   05_prepare_dataset  Skipping 19.png — no caption file found
+2026-06-05 19:00:17,872  WARNING   05_prepare_dataset  Skipping 20.png — no caption file found
+2026-06-05 19:00:17,873  WARNING   05_prepare_dataset  Skipping 23.png — no caption file found
+2026-06-05 19:00:17,874  WARNING   05_prepare_dataset  Skipping 25.png — no caption file found
+2026-06-05 19:00:17,874  WARNING   05_prepare_dataset  Skipping 26.png — no caption file found
+2026-06-05 19:00:18,127  WARNING   05_prepare_dataset  Captioned dataset size 17 is below minimum 40
+2026-06-05 19:00:18,128  INFO      05_prepare_dataset  Dataset validated. 17 images ready for training.
