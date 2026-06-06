@@ -1,0 +1,129 @@
+{
+  "name": "Technical Diagrams Style",
+  "version": "1.0",
+  "description": "Fine-line monochrome architectural drawing style (delicate technical linework, stippled textures, naturalistic scale figures). Source dataset: dataset_Ranram_diagram/Style02.",
+
+  "colour_palette": {
+    "background":     { "hex": "#FFFFFF", "role": "primary background — always pure white, generous negative space" },
+    "ink_line":       { "hex": "#1A1A1A", "role": "all primary linework — thin uniform black hairlines" },
+    "figure_fill":    { "hex": "#1A1A1A", "role": "solid-black fill used selectively on some human figures and small props" },
+    "guide_grey":     { "hex": "#9B9B9B", "role": "dotted / dashed projection and explosion guide lines" },
+    "stipple_grey":   { "hex": "#BDBDBD", "role": "fine stipple and dot textures for solid masses and shading" },
+    "context_grey":   { "hex": "#D6D6D6", "role": "ghosted background context (faint surrounding buildings, terrain edges)" },
+    "rule":           "Strictly monochrome / greyscale. NO chromatic accents — no orange, yellow, or any saturated colour anywhere."
+  },
+
+  "line_weights": {
+    "primary_outline":    { "px": 0.8, "role": "main object edges and structural members — thin and uniform, never bold" },
+    "secondary_detail":   { "px": 0.5, "role": "interior detail, joints, slats, furniture, texture linework" },
+    "projection_guide":   { "px": 0.4, "role": "dotted/dashed explosion and projection lines (guide_grey)" },
+    "note":               "Line hierarchy is subtle and even — no heavy emphatic outlines. Crisp vector quality, consistent weight across the drawing."
+  },
+
+  "diagram_types": [
+    {
+      "name": "fine_line_perspective",
+      "description": "One- or two-point perspective line drawing of a structure in situ, with ghosted faint context buildings behind",
+      "typical_use": "Showing a pavilion or intervention within its urban/landscape setting at human eye level"
+    },
+    {
+      "name": "detailed_axonometric",
+      "description": "Detailed isometric/axonometric of a timber or bamboo lattice structure, every member drawn",
+      "typical_use": "Communicating full structural assembly, framing logic and spatial occupation"
+    },
+    {
+      "name": "exploded_axonometric",
+      "description": "Components separated along axes with light grey dotted guide lines connecting parts",
+      "typical_use": "Layer separation, construction sequence, material/system breakdown"
+    },
+    {
+      "name": "site_plan_aerial",
+      "description": "Top-down plan with stippled tree canopies, dotted vegetation outlines and a small building footprint",
+      "typical_use": "Landscape strategy, site occupation, relationship of object to clearing/trees"
+    },
+    {
+      "name": "roof_floor_plan",
+      "description": "Orthographic roof or floor plan with diamond/lattice texture fills and loose figure outlines",
+      "typical_use": "Showing structural grid, roof geometry, internal layout and occupancy"
+    },
+    {
+      "name": "assembly_sequence_diagram",
+      "description": "A row of identical axonometric components shown in successive states (e.g. folding/opening steps)",
+      "typical_use": "Demonstrating kinematics, transformation, or a build/operation sequence"
+    },
+    {
+      "name": "circular_process_diagram",
+      "description": "Circular flow of small numbered axonometric vignettes connected by arrows, with short labels",
+      "typical_use": "Lifecycle, material/carbon cycle, supply chain or phasing narratives"
+    },
+    {
+      "name": "structural_detail",
+      "description": "Isolated close-up of a timber/bamboo joint, connection or sub-assembly",
+      "typical_use": "Explaining a junction, fixing, or repeated structural module"
+    }
+  ],
+
+  "human_figures": {
+    "style":      "naturalistic loose line figures, not abstract silhouettes",
+    "detail":     "recognisable posture and props — hats, bags, children, people seated/standing/leaning",
+    "fill":       "mixed — some figures solid black (#1A1A1A), others left as open white outline",
+    "props":      ["bicycles", "chairs", "tables", "easels", "carried bags", "potted plants"],
+    "plan_view":  "in plan, figures become small gestural organic outlines (almost blob-like)",
+    "scale_use":  ["1:50", "1:100"],
+    "note":       "Figures are always present to give life and scale; grouped in small clusters doing activities, never a single static mannequin."
+  },
+
+  "vegetation": {
+    "trees_plan":      "stippled / dotted canopy outlines with fine radiating branch lines",
+    "trees_elevation": "delicate fine-line trees; forests as rows of small pine silhouettes",
+    "ground":          "dotted field textures and loose organic dashed edges for planting beds and terrain",
+    "note":            "Vegetation is rendered with the same fine, light hand as the architecture — never bold or filled."
+  },
+
+  "textures": {
+    "solid_mass":   { "pattern": "fine even stipple (dots)", "note": "pyramidal roofs, masonry volumes, heavy elements" },
+    "lattice":      { "pattern": "diamond / diagonal cross-grid of thin lines", "note": "floor build-ups, screens, roof structure" },
+    "mesh_canopy":  { "pattern": "fine triangulated or square mesh", "note": "tensile/net canopies and shading surfaces" },
+    "glazing":      { "pattern": "open (left white) with thin frame lines", "note": "transparent surfaces shown by absence of fill" },
+    "guide_lines":  { "pattern": "evenly spaced grey dots / dashes", "note": "projection and explosion guides" }
+  },
+
+  "typography": {
+    "primary": {
+      "style":   "light sans-serif, small, sentence or title case",
+      "use":     "short step labels and section titles on process/cycle diagrams",
+      "example": "Timber stores CO₂ / Local quarries"
+    },
+    "numbering": {
+      "style":   "small bold sans-serif index numbers (01, 02, 03 …)",
+      "use":     "ordering vignettes in sequence and circular process diagrams"
+    },
+    "rule": "Most drawings carry NO text at all. When present, type is small, light, unobtrusive sans-serif — never large headings, never serif."
+  },
+
+  "signature_elements": [
+    "thin uniform monochrome hairline linework — delicate, even, never bold",
+    "pure white background with generous floating negative space",
+    "light grey dotted projection / explosion guide lines",
+    "fine stipple textures for mass and vegetation",
+    "naturalistic small-scale human figures with everyday props (bikes, hats, bags, chairs)",
+    "ghosted faint context buildings behind the main subject",
+    "timber / bamboo lattice and scaffolding structures drawn member-by-member",
+    "axonometric and perspective projections without heavy distortion",
+    "stippled tree canopies and dashed planting edges in plan",
+    "numbered vignette sequences for narrative / cyclical diagrams"
+  ],
+
+  "prompt_building": {
+    "required_tokens": ["technical_drawing"],
+    "palette_tokens":  ["white background", "monochrome", "thin uniform black hairline linework", "no colour"],
+    "figure_tokens":   ["naturalistic loose-line scale figures", "people with bikes, hats and bags", "some figures solid black"],
+    "texture_tokens":  ["fine stipple shading", "dotted grey projection guide lines", "stippled tree canopies"],
+    "annotation_tokens": ["minimal or no text", "small light sans-serif numbered labels when present"],
+    "negative_tokens": [
+      "photorealistic", "3d render", "colour", "orange", "yellow", "saturated",
+      "bold outlines", "heavy line weights", "gradient", "shadows", "blurry",
+      "noisy", "watermark", "colour photograph", "painterly", "low contrast"
+    ]
+  }
+}
