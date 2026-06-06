@@ -1,0 +1,10 @@
+# Secrets — NEVER commit your real API key
+.env
+.env.*
+!.env.example
+
+# Runtime / generated
+captioning.log
+captions.json
+__pycache__/
+*.pyc

@@ -1,0 +1,4 @@
+anthropic>=0.40
+click>=8.1
+tqdm>=4.66
+python-dotenv>=1.0
