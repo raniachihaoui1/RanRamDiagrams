@@ -1,29 +1,41 @@
-"""Real ComfyUI client (skeleton).
+"""Real ComfyUI client for FLUX.2 Klein img2img workflow.
 
-Activated with COMFY_MODE=real. ComfyUI exposes:
-  POST /prompt           -> queue a workflow (returns prompt_id)
-  GET  /history/{id}     -> outputs once finished
-  WS   /ws?clientId=...  -> live progress events
-  GET  /view?filename=.. -> download an output image
-
-To finish wiring this:
-  1. Export your Flux 2.0 workflows from ComfyUI in **API format** into
-     ../workflows/ (e.g. flux_txt2img.json, flux_img2img.json).
-  2. Fill in `_load_workflow()` + `_inject_params()` to set the prompt, seed,
-     dimensions, model and LoRA nodes by their node ids (see workflows/README).
-  3. Stream `/ws` progress into `on_progress`.
-No upstream code changes are required — the interface matches MockComfyClient.
+Node map (from flux_img2img.json):
+  437          PrimitiveStringMultiline  -> prompt text
+  434          LoadImage                 -> reference image filename (img2img)
+  554          ImageResizeKJv2           -> auto-resizes reference to width/height
+  760:749      PrimitiveInt (seed)       -> noise seed
+  760:750      PrimitiveInt (steps)      -> sampling steps
+  760:751      PrimitiveInt (width)      -> output width
+  760:752      PrimitiveInt (height)     -> output height
+  760:743      EmptyFlux2LatentImage     -> batch_size (count)
+  760:744      CLIPTextEncode (neg)      -> negative prompt text
+  760:759      LoraLoader                -> lora_name, strength_model, strength_clip
+  760:746      UNETLoader                -> unet_name (diffusion model)
 """
 
 from __future__ import annotations
 
+import asyncio
+import copy
 import json
+import random
+import uuid
 from pathlib import Path
 
 import httpx
+import websockets
 
 from app.config import get_settings
 from comfy.base import ComfyClient, GenParams, ProgressCallback
+
+
+def _format_node_errors(node_errors: dict) -> str:
+    parts: list[str] = []
+    for node_id, info in node_errors.items():
+        for err in info.get("errors", []):
+            parts.append(f"node {node_id}: {err.get('details') or err.get('message')}")
+    return "ComfyUI rejected the workflow — " + "; ".join(parts)
 
 
 class RealComfyClient(ComfyClient):
@@ -39,25 +51,127 @@ class RealComfyClient(ComfyClient):
         path: Path = self.workflows_dir / fname
         if not path.exists():
             raise FileNotFoundError(
-                f"Workflow '{fname}' not found in {self.workflows_dir}. Export it "
-                "from ComfyUI in API format. See workflows/README.md."
+                f"Workflow '{fname}' not found in {self.workflows_dir}. "
+                "Export it from ComfyUI in API format. See workflows/README.md."
             )
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_bytes())
 
-    def _inject_params(self, workflow: dict, params: GenParams) -> dict:
-        # TODO: map node ids -> set prompt/seed/dimensions/model/loras.
-        raise NotImplementedError(
-            "Map your workflow's node ids in RealComfyClient._inject_params()."
-        )
+    def _inject_params(self, workflow: dict, params: GenParams, image_filename: str | None = None) -> dict:
+        wf = copy.deepcopy(workflow)
+        seed = params.seed if params.seed is not None else random.randint(0, 2**31 - 1)
 
-    async def generate(
-        self, params: GenParams, on_progress: ProgressCallback
-    ) -> list[bytes]:
-        workflow = self._inject_params(self._load_workflow(params.mode), params)
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=None) as client:
-            resp = await client.post("/prompt", json={"prompt": workflow})
-            resp.raise_for_status()
-            # TODO: subscribe to /ws for progress, poll /history, download via /view.
-            raise NotImplementedError(
-                "Finish the /ws progress + /history + /view download flow."
+        wf["437"]["inputs"]["value"] = params.prompt
+        wf["760:744"]["inputs"]["text"] = params.negative or ""
+        wf["760:749"]["inputs"]["value"] = seed
+        wf["760:751"]["inputs"]["value"] = params.width
+        wf["760:752"]["inputs"]["value"] = params.height
+        wf["760:743"]["inputs"]["batch_size"] = params.count
+
+        # Require an explicit LoRA choice rather than silently using whatever
+        # default is baked into the committed workflow (which points at one
+        # specific machine's file and won't exist on a teammate's ComfyUI).
+        if not params.loras:
+            raise ValueError(
+                "No LoRA selected. Pick a LoRA in the prompt bar before generating."
             )
+        wf["760:759"]["inputs"]["lora_name"] = params.loras[0]
+        wf["760:759"]["inputs"]["strength_model"] = 1.0
+        wf["760:759"]["inputs"]["strength_clip"] = 1.0
+
+        if image_filename:
+            wf["434"]["inputs"]["image"] = image_filename
+            wf["554"]["inputs"]["width"] = params.width
+            wf["554"]["inputs"]["height"] = params.height
+
+        return wf
+
+    async def _upload_image(self, client: httpx.AsyncClient, image_path: str) -> str:
+        path = Path(image_path)
+        with path.open("rb") as f:
+            resp = await client.post(
+                "/upload/image",
+                files={"image": (path.name, f, "image/png")},
+            )
+        resp.raise_for_status()
+        return resp.json()["name"]
+
+    async def generate(self, params: GenParams, on_progress: ProgressCallback) -> list[bytes]:
+        client_id = str(uuid.uuid4())
+
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=120) as client:
+            # Upload reference image for img2img
+            image_filename: str | None = None
+            if params.mode == "img2img" and params.reference_image_path:
+                image_filename = await self._upload_image(client, params.reference_image_path)
+
+            workflow = self._inject_params(
+                self._load_workflow(params.mode), params, image_filename
+            )
+
+            await on_progress(0.0, "queued")
+
+            # Connect the WebSocket FIRST so we never miss the completion event
+            # (a fast prompt could finish before we'd otherwise subscribe).
+            ws_url = self.base_url.replace("http://", "ws://").replace("https://", "wss://")
+            ws_url = f"{ws_url}/ws?clientId={client_id}"
+
+            async with websockets.connect(ws_url, max_size=None) as ws:
+                resp = await client.post(
+                    "/prompt", json={"prompt": workflow, "client_id": client_id}
+                )
+                resp.raise_for_status()
+                body = resp.json()
+
+                node_errors = body.get("node_errors") or {}
+                if node_errors:
+                    raise RuntimeError(_format_node_errors(node_errors))
+
+                prompt_id: str = body["prompt_id"]
+
+                async for raw in ws:
+                    # ComfyUI interleaves binary preview frames — skip them.
+                    if isinstance(raw, (bytes, bytearray)):
+                        continue
+                    msg = json.loads(raw)
+                    mtype = msg.get("type")
+                    data = msg.get("data", {})
+
+                    if mtype == "progress":
+                        step = data.get("value", 0)
+                        total = data.get("max", 1)
+                        await on_progress(step / max(total, 1), "running")
+
+                    elif mtype == "execution_error" and data.get("prompt_id") == prompt_id:
+                        raise RuntimeError(
+                            data.get("exception_message", "ComfyUI execution error")
+                        )
+
+                    elif mtype == "executing" and data.get("prompt_id") == prompt_id:
+                        if data.get("node") is None:
+                            break  # generation finished
+
+            await on_progress(1.0, "done")
+
+            # Fetch outputs from history
+            history_resp = await client.get(f"/history/{prompt_id}", timeout=30)
+            history_resp.raise_for_status()
+            history = history_resp.json()
+
+            outputs = history.get(prompt_id, {}).get("outputs", {})
+            images: list[bytes] = []
+            for node_output in outputs.values():
+                for img_info in node_output.get("images", []):
+                    if img_info.get("type") == "output":
+                        dl = await client.get(
+                            "/view",
+                            params={
+                                "filename": img_info["filename"],
+                                "subfolder": img_info.get("subfolder", ""),
+                                "type": "output",
+                            },
+                            timeout=60,
+                        )
+                        dl.raise_for_status()
+                        images.append(dl.content)
+
+            return images
