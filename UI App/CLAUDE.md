@@ -12,8 +12,8 @@ Design language: **90% Krea**, Apple-like — dark base, rounded corners, glassm
 
 - `frontend/` — Next.js 16 (App Router), React 19, TypeScript, **Tailwind v4** (CSS `@theme` tokens in `app/globals.css`), Zustand (state), TanStack Query (data), `motion` (animation), lucide-react (icons).
 - `backend/` — Python FastAPI + Uvicorn + SQLAlchemy (SQLite). The only component that touches ComfyUI, the filesystem, and models.
-- `comfy/` (under backend) — ComfyUI adapter: `base.py` (ABC), `mock.py` (simulated results, default), `real.py` (live instance), `workflows/` (API-format templates + node maps).
-- `models/` — plug-and-ready model folders (checkpoints/ loras/ vae/ clip/ controlnet/ upscale/). Git-ignored except READMEs. Mirrors ComfyUI's layout.
+- `comfy/` (under backend) — ComfyUI adapter: `base.py` (ABC), `mock.py` (simulated results, default), `real.py` (live FLUX.2 Klein img2img client), `factory.py`.
+- **No `models/` folder** — the app does not host model files. In real mode the Model/LoRA chips are fetched live from ComfyUI (`/object_info`); in mock mode they're placeholders. Models live in each user's own ComfyUI install.
 - `storage/` — generated content (git-ignored): `images/ thumbnails/ uploads/ canvas_projects/` + `app.db`.
 - `workflows/` — exported ComfyUI workflows (API format) to wire when going real.
 - `rhino/` — `viewport_stream.py` stub + `PROTOCOL.md` for the future live-viewport bridge.
@@ -64,13 +64,13 @@ cd frontend; npm run build          # production build (typechecks too)
 
 ## Deploy & verification
 
-- Frontend builds to **standalone** output (`next.config.ts` `output: "standalone"`); `frontend/Dockerfile` + `backend/Dockerfile` + `docker-compose.yml` cover deploy (`docker compose up --build`). `storage/` and `models/` mount as volumes.
+- Frontend builds to **standalone** output (`next.config.ts` `output: "standalone"`); `frontend/Dockerfile` + `backend/Dockerfile` + `docker-compose.yml` cover deploy (`docker compose up --build`). `storage/` mounts as a volume.
 - The full mock flow is verified end-to-end: generate → job WS → images persisted → library → file serving → CORS, and all six routes render. When debugging, note `next dev` falls back to **:3001** if :3000 is taken — check the dev log for the actual port.
 
 ## Architecture notes
 
 - **Config is centralized** in `backend/app/config.py` (`Settings` via pydantic-settings, reads `.env`). All paths resolve relative to `UI App/` unless absolute. `get_settings()` is cached; `settings.ensure_dirs()` runs on startup (lifespan).
-- **ComfyUI mock-first**: build and test the entire UI flow against `MockComfyClient`; switching to real ComfyUI is `COMFY_MODE=real` + mapping workflow node ids in `comfy/workflows/` — no UI changes.
+- **ComfyUI mock-first**: build and test the entire UI flow against `MockComfyClient`; switching to real ComfyUI is `COMFY_MODE=real` (the `flux_img2img.json` node map is already wired in `comfy/real.py`) — no UI changes. In real mode `services/catalog` fetches the Model/LoRA lists from ComfyUI's `/object_info`, and an explicit LoRA selection is required.
 - **Frontend ↔ backend**: REST + WebSocket at `NEXT_PUBLIC_API_URL` (`lib/config.ts` derives `WS_URL`). Generation progress and the Rhino bridge use WebSockets.
 - **Design tokens**: defined once in `app/globals.css` `@theme` (colors `base/surface/surface-2/elevated/border/foreground/muted/faint/accent`, radii, shadows). Use semantic Tailwind classes (`bg-surface`, `text-muted`, `rounded-xl`); use `.glass` / `.glass-strong` utilities for frosted panels. Compose classes with `cn()` from `lib/utils.ts`.
 - **Next.js 16 gotchas**: dynamic `params`/`searchParams` are async (await them); Middleware is now `proxy.ts`; Turbopack is the default bundler; Server Components by default — add `"use client"` only where interactivity/browser APIs are needed.
@@ -78,7 +78,7 @@ cd frontend; npm run build          # production build (typechecks too)
 ## Backend API (implemented)
 
 - `GET /api/health` — status + app name + comfy mode.
-- `GET /api/models`, `GET /api/loras` — scanned `models/` + built-in defaults (so chips are never empty in mock mode).
+- `GET /api/models`, `GET /api/loras` — fetched from ComfyUI `/object_info` in real mode; placeholder entries in mock mode (no local files read).
 - `POST /api/generate` — body = `GenerateRequest` (mode, prompt, negative, model, loras[], width, height, count ≤4, seed?, reference_image_id?, reference_weight). Returns `{id, status}`. **Must stay `async`** (it schedules an asyncio task).
 - `GET /api/jobs/{id}` — live state (memory-first, DB fallback).
 - `WS /ws/jobs/{id}` — streams `snapshot` → `progress`* → `done`(with full image payloads) | `error`.

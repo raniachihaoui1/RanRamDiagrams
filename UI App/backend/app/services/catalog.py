@@ -1,9 +1,11 @@
 """Catalog of available checkpoints and LoRAs.
 
-In **real** mode, the lists come straight from the running ComfyUI instance
-(`/object_info`), so names match exactly what ComfyUI expects in the workflow.
-In **mock** mode, scans the local models/ folder + built-in defaults so the
-generator's chips are never empty.
+In **real** mode the lists come straight from the running ComfyUI instance
+(`/object_info`), so names match exactly what ComfyUI expects in the workflow —
+you manage models only in ComfyUI's own `models/` folder, never in this repo.
+
+In **mock** mode (no GPU/ComfyUI) the chips show built-in placeholder entries so
+the UI demo is never empty. No local model files are read.
 """
 
 from __future__ import annotations
@@ -15,7 +17,14 @@ import httpx
 from app.config import get_settings
 from app.schemas import ModelInfo
 
-_WEIGHT_EXTS = {".safetensors", ".ckpt", ".pt", ".pth", ".gguf", ".bin"}
+# Placeholders shown only in mock mode so the generator's chips aren't empty.
+MOCK_CHECKPOINTS = [
+    ModelInfo(id="flux2-dev", name="Flux 2.0 [dev]", kind="checkpoint", builtin=True),
+    ModelInfo(id="flux1-dev", name="Flux.1 [dev]", kind="checkpoint", builtin=True),
+]
+MOCK_LORAS = [
+    ModelInfo(id="demo-lora", name="Demo LoRA (mock)", kind="lora", builtin=True),
+]
 
 
 def _comfy_object_info(node_class: str, input_name: str) -> list[str]:
@@ -33,24 +42,6 @@ def _label(comfy_name: str) -> str:
     """Friendly label: drop folder + extension (keep the file stem)."""
     return PurePath(comfy_name).stem
 
-BUILTIN_CHECKPOINTS = [
-    ModelInfo(id="flux2-dev", name="Flux 2.0 [dev]", kind="checkpoint", builtin=True),
-    ModelInfo(id="flux1-dev", name="Flux.1 [dev]", kind="checkpoint", builtin=True),
-]
-BUILTIN_LORAS: list[ModelInfo] = []
-
-
-def _scan(folder: str, kind: str) -> list[ModelInfo]:
-    settings = get_settings()
-    root = settings.models_path / folder
-    if not root.exists():
-        return []
-    out: list[ModelInfo] = []
-    for p in sorted(root.iterdir()):
-        if p.is_file() and p.suffix.lower() in _WEIGHT_EXTS:
-            out.append(ModelInfo(id=p.stem, name=p.stem, kind=kind, builtin=False))
-    return out
-
 
 def list_checkpoints() -> list[ModelInfo]:
     settings = get_settings()
@@ -58,9 +49,9 @@ def list_checkpoints() -> list[ModelInfo]:
         try:
             names = _comfy_object_info("UNETLoader", "unet_name")
             return [ModelInfo(id=n, name=_label(n), kind="checkpoint") for n in names]
-        except Exception:  # noqa: BLE001 — fall back to local scan if ComfyUI is down
+        except Exception:  # noqa: BLE001 — fall back to placeholders if ComfyUI is down
             pass
-    return _scan("checkpoints", "checkpoint") + BUILTIN_CHECKPOINTS
+    return MOCK_CHECKPOINTS
 
 
 def list_loras() -> list[ModelInfo]:
@@ -69,6 +60,6 @@ def list_loras() -> list[ModelInfo]:
         try:
             names = _comfy_object_info("LoraLoader", "lora_name")
             return [ModelInfo(id=n, name=_label(n), kind="lora") for n in names]
-        except Exception:  # noqa: BLE001 — fall back to local scan if ComfyUI is down
+        except Exception:  # noqa: BLE001 — fall back to placeholders if ComfyUI is down
             pass
-    return _scan("loras", "lora") + BUILTIN_LORAS
+    return MOCK_LORAS

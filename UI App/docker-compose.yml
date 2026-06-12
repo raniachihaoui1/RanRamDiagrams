@@ -10,7 +10,6 @@ services:
       - "8000:8000"
     volumes:
       - ./storage:/app/storage
-      - ./models:/app/models
       - ./workflows:/app/workflows
     restart: unless-stopped
 

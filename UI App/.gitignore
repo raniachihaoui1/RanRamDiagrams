@@ -26,11 +26,7 @@ storage/canvas_projects/*
 storage/app.db
 !storage/**/.gitkeep
 
-# ---- Models (large binaries — keep folders + READMEs only) ----
-models/**/*.safetensors
-models/**/*.ckpt
-models/**/*.pt
-models/**/*.pth
-models/**/*.bin
-models/**/*.gguf
-!models/**/README.md
+# ---- Models ----
+# This app does NOT host model files. In real mode models live in your ComfyUI;
+# in mock mode none are needed. Ignore a stray models/ folder just in case.
+models/

@@ -12,8 +12,9 @@ results library — with a Rhino viewport bridge.
 
 - **Frontend**: Next.js 16 (App Router, TypeScript, Tailwind v4) — `frontend/`
 - **Backend**: Python FastAPI + SQLite — `backend/`
-- **Engine**: ComfyUI adapter (`backend/comfy/`) — mock now, real later
-- Generated images & canvas projects live in `storage/`; drop models in `models/`.
+- **Engine**: ComfyUI adapter (`backend/comfy/`) — mock by default, real when ready
+- Generated images & canvas projects live in `storage/`. **Models are not hosted
+  here** — in real mode they come from your ComfyUI install.
 
 ## Prerequisites
 
@@ -115,15 +116,18 @@ write a prompt, and generate.
 No frontend changes are needed — the adapter interface is identical, and
 swapping back to `COMFY_MODE=mock` always gives you a GPU-free fallback.
 
-## Models
+## Models — you do NOT put models in this repo
 
-In **real** mode the Model/LoRA chips are populated **from your ComfyUI**
-(`/object_info`) — so you only manage models in ComfyUI's own `models/` folder,
-not here.
+This app never hosts model files (no `models/` folder, nothing to commit).
 
-In **mock** mode the app instead scans this project's local
-`models/{checkpoints,loras,vae,...}/` folders for chip labels (cosmetic only).
-See `models/README.md`.
+- **Real mode**: the Model/LoRA chips are populated live **from your ComfyUI**
+  (`/object_info`). You install/keep models only in ComfyUI's own `models/`
+  folder. Nothing is uploaded to git — your teammate uses *her* ComfyUI + *her*
+  models.
+- **Mock mode**: the chips show placeholder entries; no model files are read.
+
+So: **don't add `.safetensors` or checkpoints to the repo.** They belong in
+ComfyUI on each person's machine.
 
 ## Rhino viewport bridge
 
@@ -134,7 +138,7 @@ straight into image-to-image.
 ## Deploy
 
 `docker compose up --build` builds the backend (uvicorn) and frontend (Next.js
-standalone). `storage/` and `models/` are mounted as volumes.
+standalone). `storage/` is mounted as a volume.
 
 ## Project structure
 
@@ -142,10 +146,10 @@ standalone). `storage/` and `models/` are mounted as volumes.
 UI App/
 ├─ frontend/   Next.js app (pages under app/, components/, lib/, store/)
 ├─ backend/    FastAPI app (app/, comfy/ adapter)
-├─ models/     plug-and-ready model folders
 ├─ storage/    generated images, thumbnails, uploads, canvas projects, app.db
 ├─ workflows/  ComfyUI API-format workflows (for real mode)
 └─ rhino/      viewport bridge script + protocol
+                (no models/ folder — models live in ComfyUI)
 ```
 
 See `CLAUDE.md` for architecture details.

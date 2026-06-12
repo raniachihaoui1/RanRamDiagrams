@@ -1,7 +1,8 @@
 """Application configuration, loaded from environment / .env.
 
 All paths default to locations inside the `UI App/` directory so the app is
-plug-and-ready: drop checkpoints into models/, generated images land in storage/.
+plug-and-ready: generated images land in storage/, workflows live in workflows/.
+Models are NOT hosted here — in real mode they come from ComfyUI.
 """
 
 from __future__ import annotations
@@ -34,9 +35,8 @@ class Settings(BaseSettings):
     port: int = 8000
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
-    # Storage / models (relative to APP_ROOT unless absolute)
+    # Storage / workflows (relative to APP_ROOT unless absolute)
     storage_dir: str = "storage"
-    models_dir: str = "models"
     workflows_dir: str = "workflows"
 
     # Generation limits
@@ -49,10 +49,6 @@ class Settings(BaseSettings):
     @property
     def storage_path(self) -> Path:
         return self._resolve(self.storage_dir)
-
-    @property
-    def models_path(self) -> Path:
-        return self._resolve(self.models_dir)
 
     @property
     def workflows_path(self) -> Path:
@@ -83,12 +79,13 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     def ensure_dirs(self) -> None:
+        # Note: models_path is intentionally NOT created — in real mode models
+        # live in ComfyUI, and in mock mode none are read. See services/catalog.
         for p in (
             self.images_path,
             self.thumbnails_path,
             self.uploads_path,
             self.canvas_projects_path,
-            self.models_path,
             self.workflows_path,
         ):
             p.mkdir(parents=True, exist_ok=True)
