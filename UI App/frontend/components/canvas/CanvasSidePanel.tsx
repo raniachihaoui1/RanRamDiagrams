@@ -13,13 +13,17 @@ import {
   Save,
   Loader2,
   X,
+  Box,
+  Layers,
+  ChevronDown,
 } from "lucide-react";
 import { api, mediaUrl, type ImageOut } from "@/lib/api";
 import { openJobSocket } from "@/lib/ws";
 import { useCanvasStore } from "@/store/canvas";
 import { STAMPS, STAMP_CATEGORIES, STAMP_MAP } from "@/lib/stamps";
 import { Button } from "@/components/ui/Button";
-import { Slider } from "@/components/ui/Slider";
+import { Chip } from "@/components/ui/Chip";
+import { Popover, PopoverItem } from "@/components/ui/Popover";
 import { ImageGrid } from "@/components/media/ImageGrid";
 import { ImageModal } from "@/components/media/ImageModal";
 import { cn } from "@/lib/utils";
@@ -33,9 +37,39 @@ export function CanvasSidePanel({
   const store = useCanvasStore();
   const fileRef = React.useRef<HTMLInputElement>(null);
 
+  const { data: models } = useQuery({ queryKey: ["models"], queryFn: api.models });
+  const { data: loras } = useQuery({ queryKey: ["loras"], queryFn: api.loras });
+
   const [prompt, setPrompt] = React.useState("");
-  const [weight, setWeight] = React.useState(0.55);
+  const [model, setModel] = React.useState<string | null>(null);
+  const [lora, setLora] = React.useState<string | null>(null);
+  const [appliedToken, setAppliedToken] = React.useState<string | null>(null);
   const [progress, setProgress] = React.useState<number | null>(null);
+
+  // Default the model to the first option once loaded (mirrors PromptBar).
+  React.useEffect(() => {
+    if (!model && models && models.length) setModel(models[0].id);
+  }, [models, model]);
+
+  const modelName = models?.find((m) => m.id === model)?.name ?? "Model";
+  const loraName = loras?.find((l) => l.id === lora)?.name;
+
+  // Select a LoRA and keep its trigger token at the front of the prompt:
+  // remove the previously-applied token (if any) so it never stacks, then
+  // prepend the new one. The inserted token stays fully editable.
+  const selectLora = (id: string) => {
+    setLora(id);
+    const token = loras?.find((l) => l.id === id)?.trigger_token ?? null;
+    setPrompt((prev) => {
+      let p = prev;
+      if (appliedToken && p.startsWith(appliedToken)) {
+        p = p.slice(appliedToken.length).replace(/^,\s*/, "");
+      }
+      if (token && !p.startsWith(token)) p = p ? `${token}, ${p}` : token;
+      return p;
+    });
+    setAppliedToken(token);
+  };
   const [result, setResult] = React.useState<ImageOut | null>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -62,11 +96,12 @@ export function CanvasSidePanel({
       const job = await api.generate({
         mode: "img2img",
         prompt,
+        model,
+        loras: lora ? [lora] : [],
         width: store.width,
         height: store.height,
         count: 1,
         reference_image_id: uploaded.id,
-        reference_weight: weight,
       });
       openJobSocket(job.id, {
         onProgress: (p) => setProgress(p),
@@ -216,6 +251,59 @@ export function CanvasSidePanel({
         {/* AI blend */}
         <section>
           <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-faint">Generate</h3>
+
+          {/* Model + LoRA */}
+          <div className="mb-2 flex flex-wrap gap-2">
+            <Popover
+              trigger={
+                <Chip icon={<Box />} active>
+                  {modelName} <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                </Chip>
+              }
+            >
+              {(close) =>
+                models?.length ? (
+                  models.map((m) => (
+                    <PopoverItem
+                      key={m.id}
+                      active={m.id === model}
+                      onClick={() => { setModel(m.id); close(); }}
+                    >
+                      {m.name}
+                    </PopoverItem>
+                  ))
+                ) : (
+                  <p className="px-2 py-2 text-xs text-faint">No models found</p>
+                )
+              }
+            </Popover>
+
+            <Popover
+              trigger={
+                <Chip icon={<Layers />} active={!!lora}>
+                  {loraName ?? "LoRA"} <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                </Chip>
+              }
+            >
+              {(close) =>
+                loras?.length ? (
+                  loras.map((l) => (
+                    <PopoverItem
+                      key={l.id}
+                      active={l.id === lora}
+                      onClick={() => { selectLora(l.id); close(); }}
+                    >
+                      <span className="flex-1">{l.name}</span>
+                      {l.id === lora && <span className="text-xs">✓</span>}
+                    </PopoverItem>
+                  ))
+                ) : (
+                  <p className="px-2 py-2 text-xs text-faint">No LoRAs found</p>
+                )
+              }
+            </Popover>
+          </div>
+
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -223,16 +311,11 @@ export function CanvasSidePanel({
             placeholder="Describe how to transform the canvas…"
             className="w-full resize-none rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none"
           />
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs text-faint">Strength</span>
-            <Slider value={weight} onChange={setWeight} />
-            <span className="w-9 text-right text-xs tabular-nums text-muted">{weight.toFixed(2)}</span>
-          </div>
           <Button
             variant="primary"
             size="md"
             onClick={generate}
-            disabled={progress !== null}
+            disabled={progress !== null || !lora}
             className="mt-3 w-full justify-center gap-2"
           >
             {progress !== null ? (
@@ -241,6 +324,9 @@ export function CanvasSidePanel({
               <><Wand2 className="h-4 w-4" /> Generate</>
             )}
           </Button>
+          {!lora && (
+            <p className="mt-1.5 text-center text-xs text-faint">Pick a LoRA to generate</p>
+          )}
         </section>
       </div>
 
