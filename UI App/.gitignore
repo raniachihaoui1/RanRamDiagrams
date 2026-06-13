@@ -18,6 +18,9 @@ backend/venv/
 .env.local
 *.local
 
+# ---- Per-user LoRA trigger-token overrides (keep the example tracked) ----
+lora_triggers.json
+
 # ---- Storage (generated content — keep folders, ignore contents) ----
 storage/images/*
 storage/thumbnails/*

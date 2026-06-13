@@ -66,6 +66,7 @@ cd frontend; npm run build          # production build (typechecks too)
 
 - Frontend builds to **standalone** output (`next.config.ts` `output: "standalone"`); `frontend/Dockerfile` + `backend/Dockerfile` + `docker-compose.yml` cover deploy (`docker compose up --build`). `storage/` mounts as a volume.
 - The full mock flow is verified end-to-end: generate → job WS → images persisted → library → file serving → CORS, and all six routes render. When debugging, note `next dev` falls back to **:3001** if :3000 is taken — check the dev log for the actual port.
+- Real mode (COMFY_MODE=real) is wired end-to-end for img2img: upload reference → POST /prompt to ComfyUI → WS progress → /history → /view download. Verified with FLUX.2 Klein workflow.
 
 ## Architecture notes
 
@@ -89,6 +90,12 @@ cd frontend; npm run build          # production build (typechecks too)
 - `WS /ws/rhino?role=source|viewer` + `GET /api/rhino/status` — Rhino viewport relay hub (forwards frames source→viewers).
 
 Generation flow: `routers/generate` → `services/jobs.JobManager` (in-memory pub/sub + asyncio task) → `comfy.factory.get_comfy_client()` → `services/storage.save_image_bytes` (PNG + WebP thumb + DB row). Image URLs are built in `app/serializers.image_to_out`.
+
+**Real mode wiring (`comfy/real.py`)** — node map for `flux_img2img.json`:
+- `437` prompt · `760:744` negative · `760:749` seed · `760:751/752` width/height · `760:743` batch_size · `760:759` LoRA (name + strengths)
+- Reference image: uploaded via `POST /upload/image` → filename injected into `434` (LoadImage) + `554` (ImageResizeKJv2).
+- **`reference_weight` is NOT wired** — the workflow uses `ReferenceLatent` (FLUX.2 conditioning), which has no continuous strength slider. The UI slider is cosmetic in real mode. To wire it properly, the workflow would need a `denoise`-based img2img node instead of ReferenceLatent.
+- A LoRA selection is **required** in real mode — the workflow default points to a machine-specific path. Missing LoRA raises a ValueError that surfaces in the UI.
 
 ## Conventions
 

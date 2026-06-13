@@ -67,6 +67,12 @@ class RealComfyClient(ComfyClient):
         wf["760:752"]["inputs"]["value"] = params.height
         wf["760:743"]["inputs"]["batch_size"] = params.count
 
+        # Diffusion model (UNETLoader). Optional — falls back to the workflow
+        # default if the request didn't pick one. The id is ComfyUI's own
+        # unet_name (from /object_info), so it round-trips exactly.
+        if params.model:
+            wf["760:746"]["inputs"]["unet_name"] = params.model
+
         # Require an explicit LoRA choice rather than silently using whatever
         # default is baked into the committed workflow (which points at one
         # specific machine's file and won't exist on a teammate's ComfyUI).

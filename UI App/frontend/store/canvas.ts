@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { CanvasData, CanvasLayer, CanvasOp, ImageOut } from "@/lib/api";
 
-export type Tool = "brush" | "eraser" | "rect" | "ellipse" | "line" | "arrow";
+export type Tool = "brush" | "eraser" | "rect" | "ellipse" | "line" | "arrow" | "stamp";
 
 export const PALETTE = [
   "#FF5A1F", // BIG orange
@@ -33,11 +33,13 @@ interface CanvasState {
   tool: Tool;
   color: string;
   size: number;
+  symbol: string; // active stamp symbol id
   undoStack: string[]; // layerId per op added
 
   setTool: (t: Tool) => void;
   setColor: (c: string) => void;
   setSize: (n: number) => void;
+  setSymbol: (id: string) => void; // also switches tool to "stamp"
 
   addLayer: () => void;
   removeLayer: (id: string) => void;
@@ -71,11 +73,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   tool: "brush",
   color: PALETTE[0],
   size: 6,
+  symbol: "human-standing",
   undoStack: [],
 
   setTool: (t) => set({ tool: t }),
   setColor: (c) => set({ color: c }),
   setSize: (n) => set({ size: n }),
+  setSymbol: (id) => set({ symbol: id, tool: "stamp" }),
 
   addLayer: () =>
     set((s) => {

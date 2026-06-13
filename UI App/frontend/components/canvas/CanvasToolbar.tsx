@@ -7,6 +7,7 @@ import {
   Circle,
   Minus,
   MoveUpRight,
+  Stamp,
   Undo2,
   Trash2,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const TOOLS: { id: Tool; icon: React.ElementType; label: string }[] = [
   { id: "ellipse", icon: Circle, label: "Ellipse" },
   { id: "line", icon: Minus, label: "Line" },
   { id: "arrow", icon: MoveUpRight, label: "Arrow" },
+  { id: "stamp", icon: Stamp, label: "Stamp (people, trees, arrows)" },
 ];
 
 export function CanvasToolbar() {
