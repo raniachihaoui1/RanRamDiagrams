@@ -57,13 +57,12 @@ class JobManager:
         task.add_done_callback(self._tasks.discard)
 
     async def _run(self, job_id: str, params: GenParams) -> None:
-        client = get_comfy_client()
-
         async def on_progress(progress: float, status: str) -> None:
             await self._publish(job_id, {"type": "progress", "status": status,
                                          "progress": round(progress, 4)})
 
         try:
+            client = get_comfy_client()
             await self._publish(job_id, {"type": "progress", "status": "running",
                                          "progress": 0.0})
             images = await client.generate(params, on_progress)
@@ -79,6 +78,8 @@ class JobManager:
                 "images": outs,
             })
         except Exception as exc:  # noqa: BLE001
+            import traceback
+            traceback.print_exc()
             await self._publish(job_id, {"type": "error", "status": "error",
                                          "error": str(exc)})
             with session_scope() as db:

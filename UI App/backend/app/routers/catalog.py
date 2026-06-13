@@ -1,4 +1,4 @@
-"""Available checkpoints and LoRAs (scanned from models/ + built-ins)."""
+"""Available checkpoints and LoRAs (from ComfyUI in real mode, placeholders in mock)."""
 
 from __future__ import annotations
 
