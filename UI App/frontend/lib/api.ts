@@ -61,7 +61,7 @@ export interface CanvasOut {
 
 // Canvas document model (kept in sync with store/canvas.ts)
 export interface CanvasOp {
-  kind: "stroke" | "shape";
+  kind: "stroke" | "shape" | "stamp";
   tool: string;
   color: string;
   size: number;
@@ -70,6 +70,7 @@ export interface CanvasOp {
   y0?: number;
   x1?: number;
   y1?: number;
+  symbolId?: string; // for kind "stamp": which symbol from lib/stamps
 }
 export interface CanvasLayer {
   id: string;

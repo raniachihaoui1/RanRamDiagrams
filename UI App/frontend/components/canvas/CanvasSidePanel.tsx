@@ -17,6 +17,7 @@ import {
 import { api, mediaUrl, type ImageOut } from "@/lib/api";
 import { openJobSocket } from "@/lib/ws";
 import { useCanvasStore } from "@/store/canvas";
+import { STAMPS, STAMP_CATEGORIES, STAMP_MAP } from "@/lib/stamps";
 import { Button } from "@/components/ui/Button";
 import { Slider } from "@/components/ui/Slider";
 import { ImageGrid } from "@/components/media/ImageGrid";
@@ -141,6 +142,38 @@ export function CanvasSidePanel({
           </div>
         </section>
 
+        {/* Symbols (stamp tool) */}
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-faint">Symbols</h3>
+            {store.tool === "stamp" && (
+              <span className="text-[10px] text-faint">click or drag to paint · size = brush slider</span>
+            )}
+          </div>
+          {STAMP_CATEGORIES.map((cat) => (
+            <div key={cat.id} className="mb-2">
+              <p className="mb-1 text-[10px] uppercase tracking-wider text-faint/70">{cat.label}</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {STAMPS.filter((s) => s.category === cat.id).map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => store.setSymbol(s.id)}
+                    title={s.label}
+                    className={cn(
+                      "grid aspect-square place-items-center rounded-md border bg-surface p-1 transition-colors hover:bg-surface-2",
+                      store.tool === "stamp" && store.symbol === s.id
+                        ? "border-foreground ring-1 ring-accent/50"
+                        : "border-border"
+                    )}
+                  >
+                    <SymbolPreview symbolId={s.id} color={store.color} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+
         {/* Layers */}
         <section>
           <div className="mb-2 flex items-center justify-between">
@@ -231,6 +264,34 @@ export function CanvasSidePanel({
       <ImageModal image={result} onClose={() => setResult(null)} />
     </aside>
   );
+}
+
+function SymbolPreview({ symbolId, color }: { symbolId: string; color: string }) {
+  const ref = React.useRef<HTMLCanvasElement | null>(null);
+  React.useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const box = 40;
+    canvas.width = box * dpr;
+    canvas.height = box * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, box, box);
+    const sym = STAMP_MAP[symbolId];
+    if (!sym) return;
+    const pad = 4;
+    const s = box - pad * 2;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.translate(pad, pad);
+    ctx.scale(s / 100, s / 100);
+    sym.draw(ctx, color);
+    ctx.restore();
+  }, [symbolId, color]);
+  return <canvas ref={ref} style={{ width: 40, height: 40 }} />;
 }
 
 function BasePicker({
