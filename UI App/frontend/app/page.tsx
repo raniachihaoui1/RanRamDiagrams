@@ -66,7 +66,7 @@ function Hero() {
           className="mx-auto max-w-3xl text-balance text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl"
         >
           Turn Rhino views into{" "}
-          <span className="text-muted">BIG-style diagrams</span> — in one place.
+          <span className="text-muted">clean architectural diagrams</span> — in one place.
         </motion.h1>
 
         <motion.p
