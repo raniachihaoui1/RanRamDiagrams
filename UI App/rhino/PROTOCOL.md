@@ -1,8 +1,27 @@
 # Rhino ↔ App viewport bridge — protocol
 
 A minimal WebSocket relay lets you mirror Rhino's active viewport inside the app
-(and snapshot it into image-to-image). It is **prepare-only**: the app side works
-now; you run the Rhino-side script when you want live frames.
+(and snapshot it into image-to-image). The app side (backend hub + web viewer) is
+live; you run the Rhino-side script when you want real frames.
+
+## Quick start
+
+1. **Start the backend** (uvicorn on :8000) and frontend — see `UI App/CLAUDE.md`.
+2. **Verify the bridge without Rhino** (optional but recommended): run the test
+   source with the backend venv, then open the app's **"Rhino viewport"** button
+   in the Image Generator — you should see an animated test pattern:
+   ```powershell
+   # from UI App/
+   backend/.venv/Scripts/python rhino/test_source.py     # Ctrl-C to stop
+   ```
+3. **Stream the real viewport** from Rhino 8: open `rhino/viewport_stream.py` in
+   Rhino's ScriptEditor (Python 3) and Run it. First run installs the client:
+   ```python
+   import subprocess, sys
+   subprocess.run([sys.executable, "-m", "pip", "install", "websocket-client"])
+   ```
+   Frames appear in the panel; click **"Use frame as reference"** to snapshot the
+   current frame into image-to-image. Press **Esc** in Rhino to stop the stream.
 
 ## Endpoint
 
