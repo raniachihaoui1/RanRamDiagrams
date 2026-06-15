@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     storage_dir: str = "storage"
     workflows_dir: str = "workflows"
 
+    # Local LoRA folder to scan for the dropdown — typically ComfyUI's
+    # models/loras folder (e.g. E:/ComfyUI/models/loras). Empty = don't scan
+    # (real mode then lists LoRAs from ComfyUI's API only). Scanned entries are
+    # merged with the ComfyUI list in real mode and used directly in mock mode.
+    loras_dir: str = ""
+
     # Generation limits
     max_images_per_request: int = 4
 
@@ -53,6 +59,12 @@ class Settings(BaseSettings):
     @property
     def workflows_path(self) -> Path:
         return self._resolve(self.workflows_dir)
+
+    @property
+    def loras_path(self) -> Path | None:
+        if not self.loras_dir.strip():
+            return None
+        return self._resolve(self.loras_dir)
 
     @property
     def images_path(self) -> Path:

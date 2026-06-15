@@ -1,11 +1,14 @@
 """Catalog of available checkpoints and LoRAs.
 
-In **real** mode the lists come straight from the running ComfyUI instance
-(`/object_info`), so names match exactly what ComfyUI expects in the workflow —
-you manage models only in ComfyUI's own `models/` folder, never in this repo.
+LoRAs come from two sources, merged:
+- **ComfyUI** (`/object_info` → `LoraLoader`) in real mode — names match exactly
+  what ComfyUI expects in the workflow.
+- **A local folder** (`LORAS_DIR`, typically ComfyUI's own `models/loras`) scanned
+  for weight files. This works even when ComfyUI's API is down and is the source
+  in mock mode. Scanned ids are the path RELATIVE to LORAS_DIR, with extension and
+  forward slashes, so they match the `lora_name` ComfyUI's LoraLoader expects.
 
-In **mock** mode (no GPU/ComfyUI) the chips show built-in placeholder entries so
-the UI demo is never empty. No local model files are read.
+If neither yields anything, built-in placeholder chips keep the UI demo non-empty.
 """
 
 from __future__ import annotations
@@ -18,6 +21,9 @@ import httpx
 
 from app.config import APP_ROOT, get_settings
 from app.schemas import ModelInfo
+
+# Weight file extensions recognised when scanning the local LoRA folder.
+_WEIGHT_EXTS = {".safetensors", ".ckpt", ".pt", ".pth", ".gguf", ".bin"}
 
 # Optional, user-maintained map of LoRA name -> exact trigger token, so the
 # token isn't merely guessed from the filename. See lora_triggers.example.json.
@@ -91,20 +97,50 @@ def list_checkpoints() -> list[ModelInfo]:
     return MOCK_CHECKPOINTS
 
 
+def _lora_info(comfy_name: str, *, builtin: bool = False) -> ModelInfo:
+    label = _label(comfy_name)
+    return ModelInfo(
+        id=comfy_name,
+        name=label,
+        kind="lora",
+        builtin=builtin,
+        trigger_token=_trigger_for(comfy_name, label),
+    )
+
+
+def _scan_local_loras() -> list[ModelInfo]:
+    """Scan LORAS_DIR (recursively) for weight files. Ids are the path relative
+    to the folder, with extension + forward slashes, to match ComfyUI."""
+    settings = get_settings()
+    root = settings.loras_path
+    if root is None or not root.exists():
+        return []
+    out: list[ModelInfo] = []
+    for p in sorted(root.rglob("*")):
+        if p.is_file() and p.suffix.lower() in _WEIGHT_EXTS:
+            rel = p.relative_to(root).as_posix()  # e.g. "flux/big_lora.safetensors"
+            out.append(_lora_info(rel))
+    return out
+
+
 def list_loras() -> list[ModelInfo]:
     settings = get_settings()
+    comfy: list[ModelInfo] = []
     if settings.comfy_mode == "real":
         try:
             names = _comfy_object_info("LoraLoader", "lora_name")
-            return [
-                ModelInfo(
-                    id=n,
-                    name=_label(n),
-                    kind="lora",
-                    trigger_token=_trigger_for(n, _label(n)),
-                )
-                for n in names
-            ]
-        except Exception:  # noqa: BLE001 — fall back to placeholders if ComfyUI is down
-            pass
-    return MOCK_LORAS
+            comfy = [_lora_info(n) for n in names]
+        except Exception:  # noqa: BLE001 — fall back to the local scan if ComfyUI is down
+            comfy = []
+
+    local = _scan_local_loras()
+
+    # Merge, de-duped by id (ComfyUI's names win; both should agree when LORAS_DIR
+    # points at ComfyUI's own loras folder).
+    merged: dict[str, ModelInfo] = {}
+    for info in [*comfy, *local]:
+        merged.setdefault(info.id, info)
+    result = list(merged.values())
+    result.sort(key=lambda m: m.name.lower())
+
+    return result or MOCK_LORAS
