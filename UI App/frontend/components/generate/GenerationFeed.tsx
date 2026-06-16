@@ -1,10 +1,13 @@
 "use client";
 
+import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ImageOff, Sparkles, X, Ban, PenLine } from "lucide-react";
+import { Loader2, ImageOff, Sparkles, X, Ban, PenLine, Columns2 } from "lucide-react";
 import { mediaUrl, type ImageOut } from "@/lib/api";
 import { useGeneratorStore, type Generation } from "@/store/generator";
 import { useCanvasStore } from "@/store/canvas";
+import { BeforeAfterSlider } from "@/components/ui/BeforeAfterSlider";
+import { cn } from "@/lib/utils";
 
 /** Placeholder card shown while a job is running. */
 function GeneratingCard({
@@ -33,9 +36,18 @@ function GeneratingCard({
   );
 }
 
-/** Finished image card — shows true aspect ratio, "Edit on canvas" on hover. */
-function ResultCard({ img, onOpen }: { img: ImageOut; onOpen: (i: ImageOut) => void }) {
+/** Finished image card — real aspect ratio, before/after on img2img, edit-on-canvas. */
+function ResultCard({
+  img,
+  onOpen,
+  referenceImage,
+}: {
+  img: ImageOut;
+  onOpen: (i: ImageOut) => void;
+  referenceImage?: ImageOut;
+}) {
   const router = useRouter();
+  const [comparing, setComparing] = React.useState(false);
 
   const openInCanvas = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -48,29 +60,59 @@ function ResultCard({ img, onOpen }: { img: ImageOut; onOpen: (i: ImageOut) => v
       className="group relative overflow-hidden rounded-xl border border-border bg-surface-2"
       style={{ aspectRatio: `${img.width} / ${img.height}` }}
     >
-      {/* Main click → opens modal */}
-      <button
-        onClick={() => onOpen(img)}
-        className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.02]"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={mediaUrl(img.url)}
-          alt={img.prompt ?? "result"}
-          className="h-full w-full object-cover"
+      {comparing && referenceImage ? (
+        /* ── Before / After mode ── */
+        <BeforeAfterSlider
+          before={mediaUrl(referenceImage.url)}
+          after={mediaUrl(img.url)}
+          beforeLabel="Reference"
+          afterLabel="Result"
+          className="absolute inset-0"
         />
-      </button>
+      ) : (
+        /* ── Normal view ── */
+        <>
+          <button
+            onClick={() => onOpen(img)}
+            className="absolute inset-0 transition-transform duration-200 group-hover:scale-[1.02]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={mediaUrl(img.url)}
+              alt={img.prompt ?? "result"}
+              className="h-full w-full object-cover"
+            />
+          </button>
 
-      {/* "Edit on canvas" — slides up from the bottom on hover */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-full transition-transform duration-200 group-hover:translate-y-0">
+          {/* "Edit on canvas" — slides up from the bottom on hover */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-full transition-transform duration-200 group-hover:translate-y-0">
+            <button
+              onClick={openInCanvas}
+              className="pointer-events-auto flex w-full items-center justify-center gap-1.5 bg-black/75 py-2.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/90"
+            >
+              <PenLine className="h-3.5 w-3.5" />
+              Edit on canvas
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Before/After toggle — only visible for img2img results */}
+      {referenceImage && (
         <button
-          onClick={openInCanvas}
-          className="pointer-events-auto flex w-full items-center justify-center gap-1.5 bg-black/75 py-2.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/90"
+          onClick={() => setComparing((v) => !v)}
+          title={comparing ? "Exit comparison" : "Compare with reference"}
+          className={cn(
+            "absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium shadow-md backdrop-blur-sm transition-colors",
+            comparing
+              ? "bg-white/90 text-black hover:bg-white"
+              : "bg-black/55 text-white hover:bg-black/75"
+          )}
         >
-          <PenLine className="h-3.5 w-3.5" />
-          Edit on canvas
+          <Columns2 className="h-3 w-3" />
+          {comparing ? "Exit" : "Compare"}
         </button>
-      </div>
+      )}
     </div>
   );
 }
@@ -86,7 +128,6 @@ function GenerationRow({
 
   return (
     <div className="space-y-3">
-      {/* Prompt + cancel */}
       <div className="flex items-center gap-3">
         {gen.prompt && (
           <p className="line-clamp-2 flex-1 text-sm text-muted">{gen.prompt}</p>
@@ -110,17 +151,19 @@ function GenerationRow({
           <Ban className="h-4 w-4 shrink-0" /> Generation canceled
         </div>
       ) : (
-        // 1 image → full width; 2+ → 2-column grid. Images show their real aspect ratio.
         <div
           className={
-            gen.count === 1
-              ? "max-w-xl"
-              : "grid grid-cols-1 gap-4 sm:grid-cols-2"
+            gen.count === 1 ? "max-w-xl" : "grid grid-cols-1 gap-4 sm:grid-cols-2"
           }
         >
           {gen.status === "done"
             ? gen.images.map((img) => (
-                <ResultCard key={img.id} img={img} onOpen={onOpen} />
+                <ResultCard
+                  key={img.id}
+                  img={img}
+                  onOpen={onOpen}
+                  referenceImage={gen.referenceImage}
+                />
               ))
             : Array.from({ length: gen.count }).map((_, i) => (
                 <GeneratingCard

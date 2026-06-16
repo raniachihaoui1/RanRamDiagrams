@@ -31,6 +31,7 @@ export interface Generation {
   error?: string;
   width: number;
   height: number;
+  referenceImage?: ImageOut; // img2img only — used for before/after comparison
 }
 
 /** Open job sockets, keyed by generation id, so a job can be cancelled/closed. */
@@ -160,6 +161,7 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
       images: [],
       width,
       height,
+      referenceImage: s.mode === "img2img" && s.referenceImage ? s.referenceImage : undefined,
     };
     set((st) => ({ generations: [gen, ...st.generations] }));
 

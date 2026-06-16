@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, Brush, GraduationCap, LibraryBig, ArrowRight, Wand2 } from "lucide-react";
+import { Sparkles, Brush, GraduationCap, LibraryBig, ArrowRight, Wand2, Film } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { ImageGrid } from "@/components/media/ImageGrid";
@@ -11,6 +11,7 @@ import { ImageGrid } from "@/components/media/ImageGrid";
 const TOOLS = [
   { href: "/generate", icon: Sparkles, name: "Image", desc: "Text-to-image & image-to-image" },
   { href: "/canvas", icon: Brush, name: "Canvas", desc: "Edit & compose with layers" },
+  { href: "/storyline", icon: Film, name: "Story Line", desc: "Assemble diagram grids & export PNG" },
   { href: "/train", icon: GraduationCap, name: "Train LoRA", desc: "Build your own style" },
   { href: "/library", icon: LibraryBig, name: "Library", desc: "All your results" },
 ];
@@ -47,7 +48,7 @@ export default function DashboardPage() {
       {/* Tools */}
       <section className="mt-8">
         <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-faint">Tools</h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           {TOOLS.map((t) => {
             const Icon = t.icon;
             return (

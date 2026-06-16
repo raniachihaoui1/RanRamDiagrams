@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut, Columns2, X } from "lucide-react";
 import { mediaUrl, type CanvasOp } from "@/lib/api";
 import { useCanvasStore } from "@/store/canvas";
+import { BeforeAfterSlider } from "@/components/ui/BeforeAfterSlider";
 import { STAMP_MAP } from "@/lib/stamps";
 import { cn } from "@/lib/utils";
 
@@ -150,6 +151,27 @@ export function CanvasStage({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  // ── Before / After compare mode ───────────────────────────────────────────
+  const [compareMode, setCompareMode] = React.useState(false);
+  const [compareSnap, setCompareSnap] = React.useState<string | null>(null);
+
+  const toggleCompare = React.useCallback(() => {
+    setCompareMode((on) => {
+      if (!on) {
+        // Capture a snapshot of the current canvas state as the "after" image.
+        const snap = canvasRef.current?.toDataURL("image/png") ?? null;
+        setCompareSnap(snap);
+      }
+      return !on;
+    });
+  }, [canvasRef]);
+
+  // Exit compare mode whenever the user draws a new stroke (canvas changed).
+  React.useEffect(() => {
+    if (compareMode) setCompareMode(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layers]);
 
   // ── Zoom ───────────────────────────────────────────────────────────────────
   const [zoom, setZoom] = React.useState(1);
@@ -378,7 +400,6 @@ export function CanvasStage({
               style={{
                 width: displayW,
                 height: displayH,
-                // Hide OS cursor when stamp tool is active so the ghost is the only visual cue.
                 cursor: isStamp ? "none" : "crosshair",
               }}
             />
@@ -393,7 +414,37 @@ export function CanvasStage({
         </div>
       </div>
 
-      {/* Zoom HUD — floats over the viewport, never scrolls */}
+      {/* ── Before / After overlay ── */}
+      {compareMode && baseImage && compareSnap && (
+        <div className="absolute inset-0 z-20">
+          <BeforeAfterSlider
+            before={mediaUrl(baseImage.url)}
+            after={compareSnap}
+            beforeLabel="Original"
+            afterLabel="Canvas"
+            className="h-full w-full"
+          />
+        </div>
+      )}
+
+      {/* ── Compare toggle button (top-right) ── */}
+      {baseImage && (
+        <button
+          onClick={toggleCompare}
+          title={compareMode ? "Exit comparison" : "Compare original vs canvas"}
+          className={cn(
+            "absolute right-4 top-4 z-30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-md backdrop-blur-xl transition-colors",
+            compareMode
+              ? "border-accent bg-accent text-accent-foreground hover:opacity-90"
+              : "border-border bg-surface-2/90 text-muted hover:bg-surface hover:text-foreground"
+          )}
+        >
+          {compareMode ? <X className="h-3.5 w-3.5" /> : <Columns2 className="h-3.5 w-3.5" />}
+          {compareMode ? "Exit" : "Compare"}
+        </button>
+      )}
+
+      {/* ── Zoom HUD (bottom-center) ── */}
       <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
         <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-border bg-surface-2/90 p-1 shadow-md backdrop-blur-xl">
           <button
