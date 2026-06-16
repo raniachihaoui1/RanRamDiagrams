@@ -90,7 +90,54 @@ class CanvasOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ---- Training (scaffold) ----
+# ---- Training datasets ----
+class DatasetCreate(BaseModel):
+    name: str = "Untitled dataset"
+    trigger_token: str = "my_style"
+    description: str = ""
+
+
+class DatasetImageInfo(BaseModel):
+    filename: str
+    caption: str
+
+
+class DatasetOut(BaseModel):
+    id: str
+    name: str
+    trigger_token: str
+    description: str
+    status: str
+    image_count: int
+    captions: dict[str, str]
+    images: list[DatasetImageInfo]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CaptionRunRequest(BaseModel):
+    api_key: str
+    model: str = "claude-opus-4-6"
+
+
+class CaptionPatch(BaseModel):
+    caption: str
+
+
+class PrepareRequest(BaseModel):
+    resolution: int = 1024
+
+
+class PrepareResult(BaseModel):
+    total: int
+    resized: int
+    missing_captions: list[str]
+    bad_trigger: list[str]
+    ready: bool
+
+
+# ---- Training runs (scaffold) ----
 class TrainCreate(BaseModel):
     name: str = "Untitled run"
     config: dict[str, Any] = Field(default_factory=dict)

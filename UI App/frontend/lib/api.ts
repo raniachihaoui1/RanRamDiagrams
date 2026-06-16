@@ -92,6 +92,32 @@ export interface TrainOut {
   created_at: string;
 }
 
+// ---- Training datasets ----
+export interface DatasetImageInfo {
+  filename: string;
+  caption: string;
+}
+
+export interface DatasetOut {
+  id: string;
+  name: string;
+  trigger_token: string;
+  description: string;
+  status: "draft" | "captioned" | "prepared";
+  image_count: number;
+  captions: Record<string, string>;
+  images: DatasetImageInfo[];
+  created_at: string;
+}
+
+export interface PrepareResult {
+  total: number;
+  resized: number;
+  missing_captions: string[];
+  bad_trigger: string[];
+  ready: boolean;
+}
+
 // ---- Helpers --------------------------------------------------------------
 /** Turn a relative backend path (e.g. ImageOut.url) into an absolute URL. */
 export function mediaUrl(path: string | null | undefined): string {
@@ -157,7 +183,40 @@ export const api = {
   ) => req<CanvasOut>(`/api/canvas/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteCanvas: (id: string) => req<void>(`/api/canvas/${id}`, { method: "DELETE" }),
 
-  // Training (scaffold)
+  // Training datasets
+  createDataset: (body: { name: string; trigger_token: string; description: string }) =>
+    req<DatasetOut>("/api/train/datasets", { method: "POST", body: JSON.stringify(body) }),
+  listDatasets: () => req<DatasetOut[]>("/api/train/datasets"),
+  getDataset: (id: string) => req<DatasetOut>(`/api/train/datasets/${id}`),
+  updateDataset: (id: string, body: { name: string; trigger_token: string; description: string }) =>
+    req<DatasetOut>(`/api/train/datasets/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteDataset: (id: string) => req<void>(`/api/train/datasets/${id}`, { method: "DELETE" }),
+
+  uploadDatasetImages: async (id: string, files: File[]): Promise<{ saved: string[]; total: number }> => {
+    const fd = new FormData();
+    files.forEach((f) => fd.append("files", f));
+    const res = await fetch(`${API_URL}/api/train/datasets/${id}/images`, { method: "POST", body: fd });
+    if (!res.ok) throw new Error(`upload failed: ${res.status}`);
+    return res.json();
+  },
+  deleteDatasetImage: (id: string, filename: string) =>
+    req<{ deleted: string }>(`/api/train/datasets/${id}/images/${filename}`, { method: "DELETE" }),
+  datasetImageUrl: (id: string, filename: string) =>
+    `${API_URL}/api/train/datasets/${id}/images/${encodeURIComponent(filename)}`,
+
+  patchCaption: (id: string, filename: string, caption: string) =>
+    req<{ filename: string; caption: string }>(
+      `/api/train/datasets/${id}/captions/${encodeURIComponent(filename)}`,
+      { method: "PATCH", body: JSON.stringify({ caption }) }
+    ),
+
+  prepareDataset: (id: string, resolution: number) =>
+    req<PrepareResult>(`/api/train/datasets/${id}/prepare`, {
+      method: "POST",
+      body: JSON.stringify({ resolution }),
+    }),
+
+  // Training runs (scaffold)
   createTraining: (body: { name: string; config: Record<string, unknown> }) =>
     req<TrainOut>("/api/train", { method: "POST", body: JSON.stringify(body) }),
   listTraining: () => req<TrainOut[]>("/api/train"),
