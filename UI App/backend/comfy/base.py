@@ -9,9 +9,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from typing import Any
 
 # async callback(progress 0..1, status_label)
 ProgressCallback = Callable[[float, str], Awaitable[None]]
+# sync callback(meta) — lets a client report run metadata (e.g. ComfyUI's
+# prompt_id) back to the caller so a cancel request can target it.
+MetaCallback = Callable[[dict[str, Any]], None]
 
 
 @dataclass
@@ -37,7 +41,20 @@ class ComfyClient(ABC):
 
     @abstractmethod
     async def generate(
-        self, params: GenParams, on_progress: ProgressCallback
+        self,
+        params: GenParams,
+        on_progress: ProgressCallback,
+        on_meta: MetaCallback | None = None,
     ) -> list[bytes]:
-        """Run generation, reporting progress, and return PNG bytes per image."""
+        """Run generation, reporting progress, and return PNG bytes per image.
+
+        `on_meta` (if given) is called with run metadata as it becomes known
+        (e.g. `{"prompt_id": ...}`), so the caller can later cancel the run.
+        """
         raise NotImplementedError
+
+    async def cancel(self, meta: dict[str, Any]) -> None:
+        """Best-effort cancellation of an in-flight run, given the metadata
+        previously reported via `on_meta`. Default: nothing to do (the asyncio
+        task cancellation alone stops a local/mock run)."""
+        return None

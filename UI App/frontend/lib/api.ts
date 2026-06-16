@@ -144,6 +144,7 @@ export const api = {
   generate: (body: GenerateRequest) =>
     req<JobOut>("/api/generate", { method: "POST", body: JSON.stringify(body) }),
   getJob: (id: string) => req<JobOut>(`/api/jobs/${id}`),
+  cancelJob: (id: string) => req<JobOut>(`/api/jobs/${id}/cancel`, { method: "POST" }),
 
   // Canvas projects
   createCanvas: (body: { name: string; data: CanvasData }) =>

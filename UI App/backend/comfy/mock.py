@@ -14,7 +14,7 @@ import textwrap
 
 from PIL import Image, ImageDraw, ImageFont
 
-from comfy.base import ComfyClient, GenParams, ProgressCallback
+from comfy.base import ComfyClient, GenParams, MetaCallback, ProgressCallback
 
 _STEPS = 24
 
@@ -90,7 +90,10 @@ class MockComfyClient(ComfyClient):
     name = "mock"
 
     async def generate(
-        self, params: GenParams, on_progress: ProgressCallback
+        self,
+        params: GenParams,
+        on_progress: ProgressCallback,
+        on_meta: MetaCallback | None = None,
     ) -> list[bytes]:
         seed = params.seed if params.seed is not None else random.randint(0, 2**31 - 1)
 

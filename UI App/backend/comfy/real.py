@@ -36,8 +36,10 @@ from pathlib import Path
 import httpx
 import websockets
 
+from typing import Any
+
 from app.config import get_settings
-from comfy.base import ComfyClient, GenParams, ProgressCallback
+from comfy.base import ComfyClient, GenParams, MetaCallback, ProgressCallback
 
 
 def _format_node_errors(node_errors: dict) -> str:
@@ -136,7 +138,12 @@ class RealComfyClient(ComfyClient):
         resp.raise_for_status()
         return resp.json()["name"]
 
-    async def generate(self, params: GenParams, on_progress: ProgressCallback) -> list[bytes]:
+    async def generate(
+        self,
+        params: GenParams,
+        on_progress: ProgressCallback,
+        on_meta: MetaCallback | None = None,
+    ) -> list[bytes]:
         client_id = str(uuid.uuid4())
 
         async with httpx.AsyncClient(base_url=self.base_url, timeout=120) as client:
@@ -168,6 +175,9 @@ class RealComfyClient(ComfyClient):
                     raise RuntimeError(_format_node_errors(node_errors))
 
                 prompt_id: str = body["prompt_id"]
+                # Report the prompt_id so a cancel request can target this run.
+                if on_meta is not None:
+                    on_meta({"prompt_id": prompt_id})
 
                 async for raw in ws:
                     # ComfyUI interleaves binary preview frames — skip them.
@@ -216,3 +226,18 @@ class RealComfyClient(ComfyClient):
                         images.append(dl.content)
 
             return images
+
+    async def cancel(self, meta: dict[str, Any]) -> None:
+        """Stop the run in ComfyUI: drop it from the queue if still pending, and
+        interrupt it if it's the one currently executing. Both are best-effort."""
+        prompt_id = meta.get("prompt_id")
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=10) as client:
+            if prompt_id:
+                try:
+                    await client.post("/queue", json={"delete": [prompt_id]})
+                except httpx.HTTPError:
+                    pass
+            try:
+                await client.post("/interrupt")
+            except httpx.HTTPError:
+                pass

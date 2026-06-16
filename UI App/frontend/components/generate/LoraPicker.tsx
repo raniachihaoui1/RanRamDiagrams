@@ -6,6 +6,7 @@ import type { ModelInfo } from "@/lib/api";
 import { Chip } from "@/components/ui/Chip";
 import { Popover, PopoverItem } from "@/components/ui/Popover";
 import { useGeneratorStore } from "@/store/generator";
+import { loraFamily } from "@/lib/loras";
 import { cn } from "@/lib/utils";
 
 interface Variant {
@@ -43,29 +44,39 @@ function buildGroups(loras: ModelInfo[]): Group[] {
   const map = new Map<string, Variant[]>();
   for (const m of loras) {
     const { base, label, sort } = parseName(m);
+    if (loraFamily(base).hidden) continue; // families flagged hidden are dropped
     const list = map.get(base) ?? [];
     list.push({ id: m.id, label, sort });
     map.set(base, list);
   }
   return [...map.entries()]
     .map(([base, variants]) => ({ base, variants: variants.sort((a, b) => a.sort - b.sort) }))
-    .sort((a, b) => a.base.localeCompare(b.base));
+    .sort((a, b) => displayName(a.base).localeCompare(displayName(b.base)));
 }
+
+/** The label shown in the chip — the family's configured display name, else its base. */
+const displayName = (base: string): string => loraFamily(base).display ?? base;
 
 /** One collapsed row per LoRA family: checkbox to enable + ◀ ▶ to pick a variant. */
 function LoraGroupRow({ group }: { group: Group }) {
   const loras = useGeneratorStore((s) => s.loras);
   const patch = useGeneratorStore((s) => s.patch);
 
+  const family = loraFamily(group.base);
   const ids = React.useMemo(() => group.variants.map((v) => v.id), [group]);
   const selectedId = loras.find((x) => ids.includes(x)) ?? null;
   const active = selectedId != null;
 
   // Which variant the stepper points at; defaults to the active one, else the
-  // last (highest epoch — usually the most-trained checkpoint).
+  // family's configured default step, else the last (highest) variant.
   const [idx, setIdx] = React.useState(() => {
     const i = group.variants.findIndex((v) => v.id === selectedId);
-    return i >= 0 ? i : group.variants.length - 1;
+    if (i >= 0) return i;
+    const d =
+      family.defaultStep != null
+        ? group.variants.findIndex((v) => v.sort === family.defaultStep)
+        : -1;
+    return d >= 0 ? d : group.variants.length - 1;
   });
 
   // Keep the pointer in sync if the selection changes elsewhere.
@@ -77,10 +88,13 @@ function LoraGroupRow({ group }: { group: Group }) {
 
   const current = group.variants[idx];
 
-  // Replace any sibling variant of this family with `id` (or clear the family).
+  // Only one LoRA may be active at a time, so selecting `id` replaces any other
+  // selection entirely (and its hidden keyword); passing null clears it.
   const setSelection = (id: string | null) => {
-    const others = loras.filter((x) => !ids.includes(x));
-    patch({ loras: id ? [...others, id] : others });
+    patch({
+      loras: id ? [id] : [],
+      loraTriggers: id && family.keyword ? { [id]: family.keyword } : {},
+    });
   };
 
   const toggle = () => setSelection(active ? null : current.id);
@@ -95,7 +109,7 @@ function LoraGroupRow({ group }: { group: Group }) {
   if (group.variants.length === 1) {
     return (
       <PopoverItem active={active} onClick={toggle}>
-        <span className="flex-1 truncate">{group.base}</span>
+        <span className="flex-1 truncate">{displayName(group.base)}</span>
         {active && <Check className="h-3.5 w-3.5" />}
       </PopoverItem>
     );
@@ -120,7 +134,7 @@ function LoraGroupRow({ group }: { group: Group }) {
         >
           {active && <Check className="h-3 w-3" />}
         </span>
-        <span className="truncate">{group.base}</span>
+        <span className="truncate">{displayName(group.base)}</span>
       </button>
       <div className="flex shrink-0 items-center gap-0.5">
         <button

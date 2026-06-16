@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { X, Download, Heart, Trash2 } from "lucide-react";
 import { api, mediaUrl, type ImageOut } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
+import { describeLora } from "@/lib/loras";
 import { cn } from "@/lib/utils";
 
 export function ImageModal({
@@ -82,7 +83,18 @@ export function ImageModal({
             <Meta label="Dimensions" value={`${image.width} × ${image.height}`} />
             {image.model && <Meta label="Model" value={image.model} />}
             {image.seed != null && <Meta label="Seed" value={String(image.seed)} />}
-            {image.loras?.length > 0 && <Meta label="LoRAs" value={image.loras.join(", ")} />}
+            {image.loras?.length > 0 && (() => {
+              const described = image.loras.map(describeLora);
+              const steps = described.map((d) => d.step).filter((s): s is number => s != null);
+              return (
+                <>
+                  <Meta label="LoRA" value={described.map((d) => d.label).join(", ")} />
+                  {steps.length > 0 && (
+                    <Meta label="Steps" value={steps.join(", ")} />
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <div className="grid grid-cols-2 gap-2 border-t border-border p-3">

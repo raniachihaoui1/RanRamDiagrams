@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, ImageOff, Sparkles } from "lucide-react";
+import { Loader2, ImageOff, Sparkles, X, Ban } from "lucide-react";
 import { mediaUrl, type ImageOut } from "@/lib/api";
 import { useGeneratorStore, type Generation } from "@/store/generator";
 
@@ -42,14 +42,30 @@ function GenerationRow({
   gen: Generation;
   onOpen: (i: ImageOut) => void;
 }) {
+  const cancel = useGeneratorStore((s) => s.cancel);
+
   return (
     <div className="space-y-2">
-      {gen.prompt && (
-        <p className="line-clamp-1 text-sm text-muted">{gen.prompt}</p>
-      )}
+      <div className="flex items-center gap-3">
+        {gen.prompt && (
+          <p className="line-clamp-1 flex-1 text-sm text-muted">{gen.prompt}</p>
+        )}
+        {gen.status === "running" && (
+          <button
+            onClick={() => cancel(gen.id)}
+            className="ml-auto flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" /> Cancel
+          </button>
+        )}
+      </div>
       {gen.status === "error" ? (
         <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 p-4 text-sm text-muted">
           <ImageOff className="h-4 w-4" /> {gen.error ?? "Generation failed"}
+        </div>
+      ) : gen.status === "canceled" ? (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 p-4 text-sm text-muted">
+          <Ban className="h-4 w-4" /> Generation canceled
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
