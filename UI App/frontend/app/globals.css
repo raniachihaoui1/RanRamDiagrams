@@ -2,54 +2,94 @@
 
 /* =========================================================================
    Design tokens — neutral monochrome, Apple-like.
-   Dark base; color comes from generated content, not the chrome.
+   Colors are defined as CSS vars so light/dark can switch at runtime.
+   Tailwind classes (bg-surface, text-muted, …) map to these via @theme inline.
    ========================================================================= */
-@theme {
-  /* Surfaces (dark, layered) */
-  --color-base: #0a0a0b;
-  --color-surface: #16171a;
-  --color-surface-2: #1d1e22;
-  --color-elevated: #26272c;
-  --color-border: #2a2b30;
-  --color-border-strong: #3a3b42;
 
-  /* Text */
-  --color-foreground: #f5f5f7;
-  --color-muted: #a1a1aa;
-  --color-faint: #6b6b73;
+/* --- Light theme (default) ---------------------------------------------- */
+:root {
+  --base:             #ffffff;
+  --surface:          #f5f5f7;
+  --surface-2:        #ebebef;
+  --elevated:         #e2e2e8;
+  --border:           #d8d8e0;
+  --border-strong:    #c0c0cc;
 
-  /* Single neutral "accent" = near-white for active states */
-  --color-accent: #fafafa;
-  --color-accent-foreground: #0a0a0b;
+  --foreground:       #111112;
+  --muted:            #58585f;
+  --faint:            #9898a6;
 
-  /* Light surfaces (Cute Library mode lives on white) */
-  --color-paper: #f4f4f5;
-  --color-paper-ink: #18181b;
+  --accent:           #111112;
+  --accent-foreground:#ffffff;
 
-  /* Radii — generous, Apple-like */
+  --paper:            #f4f4f5;
+  --paper-ink:        #18181b;
+
+  --shadow-float:  0 1px 2px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.10);
+  --shadow-panel:  0 1px 0 rgba(255,255,255,.6) inset, 0 12px 40px rgba(0,0,0,.10);
+}
+
+/* --- Dark theme --------------------------------------------------------- */
+.dark {
+  --base:             #0a0a0b;
+  --surface:          #16171a;
+  --surface-2:        #1d1e22;
+  --elevated:         #26272c;
+  --border:           #2a2b30;
+  --border-strong:    #3a3b42;
+
+  --foreground:       #f5f5f7;
+  --muted:            #a1a1aa;
+  --faint:            #6b6b73;
+
+  --accent:           #fafafa;
+  --accent-foreground:#0a0a0b;
+
+  --paper:            #f4f4f5;
+  --paper-ink:        #18181b;
+
+  --shadow-float:  0 1px 2px rgba(0,0,0,.40), 0 8px 24px rgba(0,0,0,.35);
+  --shadow-panel:  0 1px 0 rgba(255,255,255,.03) inset, 0 12px 40px rgba(0,0,0,.45);
+}
+
+/* --- Tailwind token map (inline = resolves at use time, not build time) - */
+@theme inline {
+  --color-base:             var(--base);
+  --color-surface:          var(--surface);
+  --color-surface-2:        var(--surface-2);
+  --color-elevated:         var(--elevated);
+  --color-border:           var(--border);
+  --color-border-strong:    var(--border-strong);
+
+  --color-foreground:       var(--foreground);
+  --color-muted:            var(--muted);
+  --color-faint:            var(--faint);
+
+  --color-accent:           var(--accent);
+  --color-accent-foreground:var(--accent-foreground);
+
+  --color-paper:            var(--paper);
+  --color-paper-ink:        var(--paper-ink);
+
+  /* Static tokens (no theming needed) */
   --radius-pill: 9999px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-sm:   10px;
+  --radius-md:   14px;
+  --radius-lg:   18px;
+  --radius-xl:   24px;
 
-  /* Soft, layered shadows */
-  --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 40px rgba(0, 0, 0, 0.45);
-
-  /* Fonts (wired in layout.tsx) */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --shadow-float: var(--shadow-float);
+  --shadow-panel: var(--shadow-panel);
 }
 
-html,
-body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
-  background-color: var(--color-base);
-  color: var(--color-foreground);
+  background-color: var(--base);
+  color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -59,43 +99,34 @@ body {
    Utilities
    ========================================================================= */
 @layer utilities {
-  /* Frosted glass panel */
   .glass {
-    background-color: color-mix(in srgb, var(--color-surface) 70%, transparent);
+    background-color: color-mix(in srgb, var(--surface) 75%, transparent);
     backdrop-filter: blur(18px) saturate(1.4);
     -webkit-backdrop-filter: blur(18px) saturate(1.4);
-    border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
   }
 
   .glass-strong {
-    background-color: color-mix(in srgb, var(--color-surface-2) 82%, transparent);
+    background-color: color-mix(in srgb, var(--surface-2) 88%, transparent);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--border);
   }
 
-  /* Hide scrollbars but keep scroll */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar {
     -ms-overflow-style: none;
-    scrollbar-thickness: none;
     scrollbar-width: none;
   }
 }
 
-/* Thin, unobtrusive scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-thumb {
-  background-color: var(--color-border-strong);
+  background-color: var(--border-strong);
   border-radius: 9999px;
   border: 3px solid transparent;
   background-clip: content-box;
