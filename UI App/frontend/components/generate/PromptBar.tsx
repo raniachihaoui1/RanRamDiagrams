@@ -131,7 +131,7 @@ export function PromptBar() {
           <Popover
             trigger={
               <Chip icon={<Ratio />} active>
-                {s.aspect === "custom" ? "Personalizado" : s.aspect}
+                {s.aspect === "custom" ? "Custom" : s.aspect}
               </Chip>
             }
           >
@@ -145,7 +145,7 @@ export function PromptBar() {
                       close();
                     }}
                   >
-                    <span className="flex-1">Personalizado</span>
+                    <span className="flex-1">Custom</span>
                     <span className="text-xs text-faint">
                       {s.referenceImage.width}×{s.referenceImage.height}
                     </span>
