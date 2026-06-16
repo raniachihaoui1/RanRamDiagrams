@@ -22,6 +22,8 @@ function newLayer(name: string): CanvasLayer {
   return { id: uid(), name, visible: true, ops: [] };
 }
 
+interface RedoEntry { layerId: string; op: CanvasOp; }
+
 interface CanvasState {
   projectId: string | null;
   name: string;
@@ -33,13 +35,14 @@ interface CanvasState {
   tool: Tool;
   color: string;
   size: number;
-  symbol: string; // active stamp symbol id
-  undoStack: string[]; // layerId per op added
+  symbol: string;
+  undoStack: string[];   // layerId per committed op
+  redoStack: RedoEntry[]; // ops that can be re-applied
 
   setTool: (t: Tool) => void;
   setColor: (c: string) => void;
   setSize: (n: number) => void;
-  setSymbol: (id: string) => void; // also switches tool to "stamp"
+  setSymbol: (id: string) => void;
 
   addLayer: () => void;
   removeLayer: (id: string) => void;
@@ -49,6 +52,7 @@ interface CanvasState {
   setBaseImage: (img: ImageOut | null) => void;
   addOp: (op: CanvasOp) => void;
   undo: () => void;
+  redo: () => void;
   clearActive: () => void;
 
   setName: (n: string) => void;
@@ -75,6 +79,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   size: 6,
   symbol: "human-standing",
   undoStack: [],
+  redoStack: [],
 
   setTool: (t) => set({ tool: t }),
   setColor: (c) => set({ color: c }),
@@ -115,17 +120,35 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         l.id === s.activeLayerId ? { ...l, ops: [...l.ops, op] } : l
       ),
       undoStack: [...s.undoStack, s.activeLayerId],
+      redoStack: [], // new stroke invalidates the redo history
     })),
 
   undo: () =>
     set((s) => {
       if (s.undoStack.length === 0) return s;
       const layerId = s.undoStack[s.undoStack.length - 1];
+      const layer = s.layers.find((l) => l.id === layerId);
+      if (!layer || layer.ops.length === 0) return s;
+      const op = layer.ops[layer.ops.length - 1];
       return {
         layers: s.layers.map((l) =>
           l.id === layerId ? { ...l, ops: l.ops.slice(0, -1) } : l
         ),
         undoStack: s.undoStack.slice(0, -1),
+        redoStack: [...s.redoStack, { layerId, op }],
+      };
+    }),
+
+  redo: () =>
+    set((s) => {
+      if (s.redoStack.length === 0) return s;
+      const { layerId, op } = s.redoStack[s.redoStack.length - 1];
+      return {
+        layers: s.layers.map((l) =>
+          l.id === layerId ? { ...l, ops: [...l.ops, op] } : l
+        ),
+        undoStack: [...s.undoStack, layerId],
+        redoStack: s.redoStack.slice(0, -1),
       };
     }),
 
@@ -135,6 +158,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         l.id === s.activeLayerId ? { ...l, ops: [] } : l
       ),
       undoStack: s.undoStack.filter((id) => id !== s.activeLayerId),
+      redoStack: [],
     })),
 
   setName: (n) => set({ name: n }),
@@ -148,6 +172,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       layers: data.layers?.length ? data.layers : freshLayers().layers,
       activeLayerId: data.layers?.length ? data.layers[0].id : get().activeLayerId,
       undoStack: [],
+      redoStack: [],
     }),
 
   toData: () => {
@@ -169,5 +194,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       baseImage: null,
       ...freshLayers(),
       undoStack: [],
+      redoStack: [],
     }),
 }));

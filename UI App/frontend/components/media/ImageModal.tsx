@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Download, Heart, Trash2 } from "lucide-react";
+import { X, Download, Heart, Trash2, PenLine } from "lucide-react";
 import { api, mediaUrl, type ImageOut } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { describeLora } from "@/lib/loras";
+import { useCanvasStore } from "@/store/canvas";
 import { cn } from "@/lib/utils";
 
 export function ImageModal({
@@ -18,6 +20,7 @@ export function ImageModal({
   onDeleted?: (id: string) => void;
 }) {
   const qc = useQueryClient();
+  const router = useRouter();
   const [fav, setFav] = React.useState(false);
 
   React.useEffect(() => {
@@ -43,6 +46,12 @@ export function ImageModal({
     qc.invalidateQueries({ queryKey: ["images"] });
     onDeleted?.(image.id);
     onClose();
+  };
+
+  const openInCanvas = () => {
+    useCanvasStore.getState().setBaseImage(image);
+    onClose();
+    router.push("/canvas");
   };
 
   return (
@@ -98,6 +107,14 @@ export function ImageModal({
           </div>
 
           <div className="grid grid-cols-2 gap-2 border-t border-border p-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={openInCanvas}
+              className="col-span-2 w-full justify-center gap-1.5"
+            >
+              <PenLine className="h-4 w-4" /> Edit on canvas
+            </Button>
             <a href={mediaUrl(image.url)} download={image.filename} className="contents">
               <Button variant="secondary" size="sm" className="w-full justify-center gap-1.5">
                 <Download className="h-4 w-4" /> Download

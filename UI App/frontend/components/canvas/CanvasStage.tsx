@@ -1,13 +1,19 @@
 "use client";
 
 import * as React from "react";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import { mediaUrl, type CanvasOp } from "@/lib/api";
 import { useCanvasStore } from "@/store/canvas";
 import { STAMP_MAP } from "@/lib/stamps";
+import { cn } from "@/lib/utils";
 
 const SHAPE_TOOLS = new Set(["rect", "ellipse", "line", "arrow"]);
-const STAMP_MULT = 5; // stamp tip size = brush size * this (slider 1..64 → ~5..320px)
+const STAMP_MULT = 5;
 const STAMP_MIN = 24;
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 4;
+const ZOOM_STEP = 0.1;
+const VIEWPORT_PAD = 48;
 
 /** Place one symbol centered at (cx, cy) at the given tip size. */
 function placeStamp(
@@ -37,8 +43,6 @@ function drawOp(ctx: CanvasRenderingContext2D, op: CanvasOp) {
   ctx.globalCompositeOperation = op.tool === "eraser" ? "destination-out" : "source-over";
 
   if (op.kind === "stamp" && op.symbolId) {
-    // Symbol brush: stamp the tip along the stroke path (Photoshop-style
-    // spacing). A single click (one point) places one stamp.
     const tip = op.size;
     const pts = op.points;
     if (!pts || pts.length < 4) {
@@ -48,7 +52,7 @@ function drawOp(ctx: CanvasRenderingContext2D, op: CanvasOp) {
       let prevX = pts[0];
       let prevY = pts[1];
       placeStamp(ctx, op.symbolId, prevX, prevY, tip, op.color);
-      let sinceLast = 0; // distance accumulated across segments since last stamp
+      let sinceLast = 0;
       for (let i = 2; i < pts.length; i += 2) {
         const x = pts[i];
         const y = pts[i + 1];
@@ -56,7 +60,7 @@ function drawOp(ctx: CanvasRenderingContext2D, op: CanvasOp) {
         if (segLen === 0) continue;
         const dirX = (x - prevX) / segLen;
         const dirY = (y - prevY) / segLen;
-        let t = 0; // consumed along this segment
+        let t = 0;
         while (sinceLast + (segLen - t) >= spacing) {
           t += spacing - sinceLast;
           placeStamp(ctx, op.symbolId, prevX + dirX * t, prevY + dirY * t, tip, op.color);
@@ -74,7 +78,6 @@ function drawOp(ctx: CanvasRenderingContext2D, op: CanvasOp) {
     if (p.length < 6) {
       for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]);
     } else {
-      // Quadratic smoothing through midpoints → pen-like strokes.
       for (let i = 2; i < p.length - 2; i += 2) {
         const xc = (p[i] + p[i + 2]) / 2;
         const yc = (p[i + 1] + p[i + 3]) / 2;
@@ -122,11 +125,111 @@ export function CanvasStage({
   const [baseReady, setBaseReady] = React.useState(false);
   const draftRef = React.useRef<CanvasOp | null>(null);
   const drawingRef = React.useRef(false);
-  // One offscreen canvas per layer so the eraser is layer-local (reveals the
-  // base/lower layers instead of cutting a hole to the page background).
   const layerCanvases = React.useRef<Map<string, HTMLCanvasElement>>(new Map());
 
-  // Load base image
+  // ── Keyboard shortcuts: Ctrl+Z undo / Ctrl+Y + Ctrl+Shift+Z redo ─────────
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      // Don't intercept when typing in an input or textarea
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+
+      if (e.key === "z" || e.key === "Z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          useCanvasStore.getState().redo();
+        } else {
+          useCanvasStore.getState().undo();
+        }
+      } else if (e.key === "y" || e.key === "Y") {
+        e.preventDefault();
+        useCanvasStore.getState().redo();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // ── Zoom ───────────────────────────────────────────────────────────────────
+  const [zoom, setZoom] = React.useState(1);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [availSize, setAvailSize] = React.useState({ w: 800, h: 600 });
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0].contentRect;
+      setAvailSize({ w: r.width, h: r.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+  }, [zoom]);
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+      setZoom((z) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, parseFloat((z + delta).toFixed(2)))));
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
+
+  const zoomIn = () => setZoom((z) => Math.min(MAX_ZOOM, parseFloat((z + ZOOM_STEP).toFixed(2))));
+  const zoomOut = () => setZoom((z) => Math.max(MIN_ZOOM, parseFloat((z - ZOOM_STEP).toFixed(2))));
+
+  const ar = width / height;
+  const availW = Math.max(1, availSize.w - VIEWPORT_PAD * 2);
+  const availH = Math.max(1, availSize.h - VIEWPORT_PAD * 2);
+  const naturalW = ar > availW / availH ? availW : availH * ar;
+  const naturalH = ar > availW / availH ? availW / ar : availH;
+  const displayW = Math.round(naturalW * zoom);
+  const displayH = Math.round(naturalH * zoom);
+
+  // ── Ghost / cursor preview ─────────────────────────────────────────────────
+  // A transparent overlay canvas sits on top of the main canvas and shows a
+  // ghosted stamp at the cursor position when the stamp tool is active.
+  const overlayRef = React.useRef<HTMLCanvasElement | null>(null);
+  const cursorPosRef = React.useRef<{ x: number; y: number } | null>(null);
+  const isHoveringRef = React.useRef(false);
+
+  const renderGhost = React.useCallback(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    const ctx = overlay.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    if (!isHoveringRef.current || !cursorPosRef.current || tool !== "stamp" || !symbol) return;
+    const { x, y } = cursorPosRef.current;
+    const tip = Math.max(STAMP_MIN, size * STAMP_MULT);
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    placeStamp(ctx, symbol, x, y, tip, color);
+    ctx.restore();
+  }, [tool, symbol, size, color]);
+
+  // Redraw ghost when tool/symbol/size/color changes (cursor may not have moved).
+  React.useEffect(() => {
+    renderGhost();
+  }, [renderGhost]);
+
+  // ── Drawing ────────────────────────────────────────────────────────────────
   React.useEffect(() => {
     if (!baseImage) {
       baseElRef.current = null;
@@ -135,10 +238,7 @@ export function CanvasStage({
     }
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => {
-      baseElRef.current = img;
-      setBaseReady(true);
-    };
+    img.onload = () => { baseElRef.current = img; setBaseReady(true); };
     img.src = mediaUrl(baseImage.url);
   }, [baseImage]);
 
@@ -164,14 +264,12 @@ export function CanvasStage({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // background (paper) or base image
     if (!baseElRef.current) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
       ctx.drawImage(baseElRef.current, 0, 0, canvas.width, canvas.height);
     }
-    // composite each visible layer (rendered on its own canvas) over the base
     for (const layer of layers) {
       if (!layer.visible) continue;
       const lc = getLayerCanvas(layer.id);
@@ -185,10 +283,10 @@ export function CanvasStage({
     }
   }, [canvasRef, layers, activeLayerId, getLayerCanvas]);
 
-  React.useEffect(() => {
-    render();
-  }, [render, baseReady, width, height]);
+  React.useEffect(() => { render(); }, [render, baseReady, width, height]);
 
+  // getBoundingClientRect() accounts for CSS display size, so zoom is
+  // transparent to the drawing coordinate system — no changes needed here.
   const toCanvasCoords = (e: React.PointerEvent) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
@@ -202,6 +300,7 @@ export function CanvasStage({
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     drawingRef.current = true;
     const { x, y } = toCanvasCoords(e);
+    cursorPosRef.current = { x, y };
     if (tool === "stamp") {
       const tip = Math.max(STAMP_MIN, size * STAMP_MULT);
       draftRef.current = { kind: "stamp", tool, color, size: tip, symbolId: symbol, points: [x, y], x0: x, y0: y };
@@ -214,8 +313,16 @@ export function CanvasStage({
   };
 
   const onMove = (e: React.PointerEvent) => {
-    if (!drawingRef.current || !draftRef.current) return;
-    const { x, y } = toCanvasCoords(e);
+    const pos = toCanvasCoords(e);
+    cursorPosRef.current = pos;
+
+    if (!drawingRef.current || !draftRef.current) {
+      // Not drawing — just update the ghost preview.
+      renderGhost();
+      return;
+    }
+
+    const { x, y } = pos;
     const d = draftRef.current;
     if (d.kind === "stroke" || d.kind === "stamp") {
       d.points!.push(x, y);
@@ -224,6 +331,7 @@ export function CanvasStage({
       d.y1 = y;
     }
     render();
+    renderGhost();
   };
 
   const onUp = () => {
@@ -234,19 +342,91 @@ export function CanvasStage({
     drawingRef.current = false;
   };
 
+  const onEnter = () => {
+    isHoveringRef.current = true;
+  };
+
+  const onLeave = () => {
+    isHoveringRef.current = false;
+    cursorPosRef.current = null;
+    renderGhost(); // clear the overlay
+    onUp();        // commit any in-progress stroke
+  };
+
+  const isStamp = tool === "stamp";
+
   return (
-    <div className="flex h-full items-center justify-center p-6">
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onPointerLeave={onUp}
-        className="max-h-full max-w-full touch-none rounded-lg border border-border shadow-[var(--shadow-panel)]"
-        style={{ aspectRatio: `${width} / ${height}`, cursor: "crosshair" }}
-      />
+    <div className="relative h-full">
+      {/* Scrollable viewport */}
+      <div ref={scrollRef} className="h-full overflow-auto">
+        <div
+          className="flex items-center justify-center"
+          style={{ minHeight: "100%", minWidth: "100%", padding: VIEWPORT_PAD }}
+        >
+          {/* Two canvases stacked: main (drawing) + overlay (ghost preview) */}
+          <div className="relative" style={{ width: displayW, height: displayH }}>
+            <canvas
+              ref={canvasRef}
+              width={width}
+              height={height}
+              onPointerDown={onDown}
+              onPointerMove={onMove}
+              onPointerUp={onUp}
+              onPointerLeave={onLeave}
+              onPointerEnter={onEnter}
+              className="absolute inset-0 touch-none rounded-lg border border-border shadow-[var(--shadow-panel)]"
+              style={{
+                width: displayW,
+                height: displayH,
+                // Hide OS cursor when stamp tool is active so the ghost is the only visual cue.
+                cursor: isStamp ? "none" : "crosshair",
+              }}
+            />
+            <canvas
+              ref={overlayRef}
+              width={width}
+              height={height}
+              className="pointer-events-none absolute inset-0 rounded-lg"
+              style={{ width: displayW, height: displayH }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Zoom HUD — floats over the viewport, never scrolls */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
+        <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-border bg-surface-2/90 p-1 shadow-md backdrop-blur-xl">
+          <button
+            onClick={zoomOut}
+            disabled={zoom <= MIN_ZOOM}
+            className={cn(
+              "grid h-7 w-7 place-items-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground",
+              zoom <= MIN_ZOOM && "opacity-30"
+            )}
+            title="Zoom out (Ctrl + scroll)"
+          >
+            <ZoomOut className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setZoom(1)}
+            className="min-w-[3.5rem] rounded-md px-2 py-1 text-center text-xs tabular-nums text-muted transition-colors hover:bg-surface hover:text-foreground"
+            title="Reset to 100%"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            onClick={zoomIn}
+            disabled={zoom >= MAX_ZOOM}
+            className={cn(
+              "grid h-7 w-7 place-items-center rounded-md text-muted transition-colors hover:bg-surface hover:text-foreground",
+              zoom >= MAX_ZOOM && "opacity-30"
+            )}
+            title="Zoom in (Ctrl + scroll)"
+          >
+            <ZoomIn className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
