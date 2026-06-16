@@ -1,0 +1,353 @@
+{
+  "676": {
+    "inputs": {
+      "filename_prefix": "2026-06-15/20260615_183220_output",
+      "images": [
+        "678:659",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "683": {
+    "inputs": {
+      "value": "Axonometric diagram of Museo Jumex by David Chipperfield. \nRectangular volume on thin pilotis, sawtooth roof with 4 \ntriangular folds facing north."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "String (Multiline)"
+    }
+  },
+  "685": {
+    "inputs": {
+      "value": 4
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "seed"
+    }
+  },
+  "678:655": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "678:656": {
+    "inputs": {
+      "steps": [
+        "678:668",
+        0
+      ],
+      "width": [
+        "678:669",
+        0
+      ],
+      "height": [
+        "678:670",
+        0
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "678:657": {
+    "inputs": {
+      "cfg": [
+        "678:674",
+        0
+      ],
+      "model": [
+        "678:682",
+        0
+      ],
+      "positive": [
+        "678:666",
+        0
+      ],
+      "negative": [
+        "678:661",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "CFGGuider"
+    }
+  },
+  "678:658": {
+    "inputs": {
+      "noise": [
+        "678:662",
+        0
+      ],
+      "guider": [
+        "678:657",
+        0
+      ],
+      "sampler": [
+        "678:655",
+        0
+      ],
+      "sigmas": [
+        "678:656",
+        0
+      ],
+      "latent_image": [
+        "678:660",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "678:659": {
+    "inputs": {
+      "samples": [
+        "678:658",
+        0
+      ],
+      "vae": [
+        "678:665",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "678:660": {
+    "inputs": {
+      "width": [
+        "678:669",
+        0
+      ],
+      "height": [
+        "678:670",
+        0
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "678:661": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "678:682",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Negative Prompt)"
+    }
+  },
+  "678:662": {
+    "inputs": {
+      "noise_seed": [
+        "678:667",
+        0
+      ]
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "RandomNoise"
+    }
+  },
+  "678:663": {
+    "inputs": {
+      "unet_name": "flux-2-klein-base-4b-fp8.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "678:664": {
+    "inputs": {
+      "clip_name": "qwen_3_4b_fp4_flux2.safetensors",
+      "type": "flux2",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "678:665": {
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "678:666": {
+    "inputs": {
+      "text": [
+        "678:673",
+        0
+      ],
+      "clip": [
+        "678:682",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "678:667": {
+    "inputs": {
+      "value": [
+        "685",
+        0
+      ]
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "seed"
+    }
+  },
+  "678:668": {
+    "inputs": {
+      "value": 20
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "steps"
+    }
+  },
+  "678:669": {
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "width"
+    }
+  },
+  "678:670": {
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "height"
+    }
+  },
+  "678:671": {
+    "inputs": {
+      "value": "Ramón"
+    },
+    "class_type": "PrimitiveString",
+    "_meta": {
+      "title": "author"
+    }
+  },
+  "678:672": {
+    "inputs": {
+      "value": "FLUX.2 Text-to-Image"
+    },
+    "class_type": "PrimitiveString",
+    "_meta": {
+      "title": "model"
+    }
+  },
+  "678:673": {
+    "inputs": {
+      "prompt": [
+        "683",
+        0
+      ]
+    },
+    "class_type": "CR Prompt Text",
+    "_meta": {
+      "title": "⚙️ CR Prompt Text"
+    }
+  },
+  "678:674": {
+    "inputs": {
+      "value": 4
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "cfg"
+    }
+  },
+  "678:682": {
+    "inputs": {
+      "lora_name": "sdxl_lightning_8step_lora.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "678:663",
+        0
+      ],
+      "clip": [
+        "678:664",
+        0
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA (Model and CLIP)"
+    }
+  },
+  "678:675": {
+    "inputs": {
+      "seed": [
+        "678:667",
+        0
+      ],
+      "steps": [
+        "678:668",
+        0
+      ],
+      "model": [
+        "678:672",
+        0
+      ],
+      "author": [
+        "678:671",
+        0
+      ],
+      "output_path": "[time(%Y-%m-%d)]",
+      "file_prefix": "[time(%Y%m%d_%H%M%S)]_param",
+      "wrap_width": 60,
+      "font_family": "Arial",
+      "font_size": 36,
+      "dark_mode": false,
+      "save_svg": true,
+      "save_yaml": false,
+      "prompt": [
+        "678:673",
+        0
+      ],
+      "negative_prompt": "",
+      "additional_text": "IAAC GenAI 2026"
+    },
+    "class_type": "SaveParamsSVG",
+    "_meta": {
+      "title": "Save Params as SVG"
+    }
+  }
+}

@@ -46,7 +46,9 @@ cd frontend; npm run build          # production build (typechecks too)
 ## Generator (Phase 3)
 
 - State lives in `store/generator.ts` (Zustand): prompt-bar settings (prompt, model, loras[], aspect, count, seed, negative, mode, referenceImage, referenceWeight) + a `generations[]` feed. `submit()` posts `/api/generate`, prepends a running `Generation`, then opens a WS via `lib/ws.openJobSocket` and patches that generation as `progress`/`done`/`error` arrive. Pass `afterDone` to invalidate the `["images"]` query.
-- `components/generate/PromptBar.tsx` — the floating glass bar: chips (Model, LoRA multi-select, Aspect, Reference upload→img2img, Count 1–4, Settings) using `components/ui/Popover` + `Slider`. img2img is the same page: uploading a reference switches `mode` and reveals the weight slider.
+- **Custom size**: when a reference image is set, `aspect` switches to `"custom"` and `submit()` mirrors the input image's dimensions (rounded to multiples of 16 for FLUX). The Aspect pill shows "Personalizado" + the real pixel dimensions. Clearing the reference restores `"1:1"`.
+- `components/generate/PromptBar.tsx` — the floating glass bar: chips (Model, LoRA grouped picker, Aspect, Reference upload→img2img, Count 1–4, Settings) using `components/ui/Popover` + `Slider`. img2img is the same page: uploading a reference switches `mode`, sets `aspect: "custom"`, and reveals the weight slider.
+- `components/generate/LoraPicker.tsx` — LoRA selector that groups variants by family name (strips trailing epoch/version suffix, e.g. `BIG_style-000010` → family `BIG_style`, label `10`). Each family collapses to one row with a ◀ ▶ stepper to cycle variants; only one variant per family can be active at a time. Single-variant families render as plain rows.
 - `components/generate/GenerationFeed.tsx` — renders the feed; running generations show N `GeneratingCard` placeholders that swap to results on done.
 - `components/media/ImageModal.tsx` — shared lightbox (download/favorite/delete); reused by the Library.
 
@@ -66,7 +68,7 @@ cd frontend; npm run build          # production build (typechecks too)
 
 - Frontend builds to **standalone** output (`next.config.ts` `output: "standalone"`); `frontend/Dockerfile` + `backend/Dockerfile` + `docker-compose.yml` cover deploy (`docker compose up --build`). `storage/` mounts as a volume.
 - The full mock flow is verified end-to-end: generate → job WS → images persisted → library → file serving → CORS, and all six routes render. When debugging, note `next dev` falls back to **:3001** if :3000 is taken — check the dev log for the actual port.
-- Real mode (COMFY_MODE=real) is wired end-to-end for img2img: upload reference → POST /prompt to ComfyUI → WS progress → /history → /view download. Verified with FLUX.2 Klein workflow.
+- Real mode (COMFY_MODE=real) is wired end-to-end for both **txt2img** and **img2img**: `comfy/real.py` routes to `flux_txt2img.json` (no reference) or `flux_img2img.json` (with reference) and injects params via separate node maps (`_inject_txt2img` / `_inject_img2img`). `workflows/flux_txt2img.json` ships in the repo (FLUX.2 Klein, node root `678:*`). Verified with FLUX.2 Klein workflow.
 
 ## Architecture notes
 

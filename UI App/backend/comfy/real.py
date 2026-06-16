@@ -1,6 +1,6 @@
-"""Real ComfyUI client for FLUX.2 Klein img2img workflow.
+"""Real ComfyUI client for FLUX.2 Klein workflows (txt2img + img2img).
 
-Node map (from flux_img2img.json):
+img2img node map (from flux_img2img.json):
   437          PrimitiveStringMultiline  -> prompt text
   434          LoadImage                 -> reference image filename (img2img)
   554          ImageResizeKJv2           -> auto-resizes reference to width/height
@@ -12,6 +12,16 @@ Node map (from flux_img2img.json):
   760:744      CLIPTextEncode (neg)      -> negative prompt text
   760:759      LoraLoader                -> lora_name, strength_model, strength_clip
   760:746      UNETLoader                -> unet_name (diffusion model)
+
+txt2img node map (from flux_txt2img.json):
+  683          PrimitiveStringMultiline  -> prompt text
+  685          PrimitiveInt (seed)       -> noise seed
+  678:669      PrimitiveInt (width)      -> output width
+  678:670      PrimitiveInt (height)     -> output height
+  678:660      EmptyFlux2LatentImage     -> batch_size (count)
+  678:661      CLIPTextEncode (neg)      -> negative prompt text
+  678:682      LoraLoader                -> lora_name, strength_model, strength_clip
+  678:663      UNETLoader                -> unet_name (diffusion model)
 """
 
 from __future__ import annotations
@@ -60,6 +70,21 @@ class RealComfyClient(ComfyClient):
         wf = copy.deepcopy(workflow)
         seed = params.seed if params.seed is not None else random.randint(0, 2**31 - 1)
 
+        # Require an explicit LoRA choice rather than silently using whatever
+        # default is baked into the committed workflow (which points at one
+        # specific machine's file and won't exist on a teammate's ComfyUI).
+        if not params.loras:
+            raise ValueError(
+                "No LoRA selected. Pick a LoRA in the prompt bar before generating."
+            )
+
+        if params.mode == "img2img":
+            return self._inject_img2img(wf, params, seed, image_filename)
+        return self._inject_txt2img(wf, params, seed)
+
+    def _inject_img2img(
+        self, wf: dict, params: GenParams, seed: int, image_filename: str | None
+    ) -> dict:
         wf["437"]["inputs"]["value"] = params.prompt
         wf["760:744"]["inputs"]["text"] = params.negative or ""
         wf["760:749"]["inputs"]["value"] = seed
@@ -73,13 +98,6 @@ class RealComfyClient(ComfyClient):
         if params.model:
             wf["760:746"]["inputs"]["unet_name"] = params.model
 
-        # Require an explicit LoRA choice rather than silently using whatever
-        # default is baked into the committed workflow (which points at one
-        # specific machine's file and won't exist on a teammate's ComfyUI).
-        if not params.loras:
-            raise ValueError(
-                "No LoRA selected. Pick a LoRA in the prompt bar before generating."
-            )
         wf["760:759"]["inputs"]["lora_name"] = params.loras[0]
         wf["760:759"]["inputs"]["strength_model"] = 1.0
         wf["760:759"]["inputs"]["strength_clip"] = 1.0
@@ -88,6 +106,23 @@ class RealComfyClient(ComfyClient):
             wf["434"]["inputs"]["image"] = image_filename
             wf["554"]["inputs"]["width"] = params.width
             wf["554"]["inputs"]["height"] = params.height
+
+        return wf
+
+    def _inject_txt2img(self, wf: dict, params: GenParams, seed: int) -> dict:
+        wf["683"]["inputs"]["value"] = params.prompt
+        wf["678:661"]["inputs"]["text"] = params.negative or ""
+        wf["685"]["inputs"]["value"] = seed
+        wf["678:669"]["inputs"]["value"] = params.width
+        wf["678:670"]["inputs"]["value"] = params.height
+        wf["678:660"]["inputs"]["batch_size"] = params.count
+
+        if params.model:
+            wf["678:663"]["inputs"]["unet_name"] = params.model
+
+        wf["678:682"]["inputs"]["lora_name"] = params.loras[0]
+        wf["678:682"]["inputs"]["strength_model"] = 1.0
+        wf["678:682"]["inputs"]["strength_clip"] = 1.0
 
         return wf
 

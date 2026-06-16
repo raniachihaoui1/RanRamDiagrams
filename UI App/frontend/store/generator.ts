@@ -9,6 +9,9 @@ export interface AspectPreset {
   h: number;
 }
 
+/** FLUX latents need dimensions that are multiples of 16. */
+const roundTo16 = (n: number) => Math.max(16, Math.round(n / 16) * 16);
+
 export const ASPECTS: AspectPreset[] = [
   { id: "1:1", label: "1:1", w: 1024, h: 1024 },
   { id: "3:2", label: "3:2", w: 1216, h: 832 },
@@ -71,12 +74,29 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
     })),
 
   setReference: (img) =>
-    set({ referenceImage: img, mode: img ? "img2img" : "txt2img" }),
+    set({
+      referenceImage: img,
+      mode: img ? "img2img" : "txt2img",
+      // Match the output to the input image; fall back to 1:1 when cleared.
+      aspect: img ? "custom" : "1:1",
+    }),
 
   submit: async (afterDone) => {
     const s = get();
     if (!s.prompt.trim() && s.mode === "txt2img") return;
-    const aspect = ASPECTS.find((a) => a.id === s.aspect) ?? ASPECTS[0];
+
+    // Custom size: mirror the reference image's dimensions (FLUX needs
+    // multiples of 16). Otherwise use the chosen aspect preset.
+    let width: number;
+    let height: number;
+    if (s.aspect === "custom" && s.referenceImage) {
+      width = roundTo16(s.referenceImage.width);
+      height = roundTo16(s.referenceImage.height);
+    } else {
+      const aspect = ASPECTS.find((a) => a.id === s.aspect) ?? ASPECTS[0];
+      width = aspect.w;
+      height = aspect.h;
+    }
 
     const req: GenerateRequest = {
       mode: s.mode,
@@ -84,8 +104,8 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
       negative: s.negative,
       model: s.model,
       loras: s.loras,
-      width: aspect.w,
-      height: aspect.h,
+      width,
+      height,
       count: s.count,
       seed: s.seed,
       reference_image_id: s.mode === "img2img" ? s.referenceImage?.id ?? null : null,
