@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   Box,
-  Layers,
   Ratio,
   ImagePlus,
   Grid2x2,
@@ -18,6 +17,7 @@ import { api, mediaUrl } from "@/lib/api";
 import { Chip } from "@/components/ui/Chip";
 import { Popover, PopoverItem } from "@/components/ui/Popover";
 import { Slider } from "@/components/ui/Slider";
+import { LoraPicker } from "@/components/generate/LoraPicker";
 import { useGeneratorStore, ASPECTS } from "@/store/generator";
 
 export function PromptBar() {
@@ -124,53 +124,48 @@ export function PromptBar() {
             )}
           </Popover>
 
-          {/* LoRA (multi) */}
-          <Popover
-            trigger={
-              <Chip icon={<Layers />} active={s.loras.length > 0}>
-                {s.loras.length ? `LoRA · ${s.loras.length}` : "LoRA"}
-              </Chip>
-            }
-          >
-            {loras?.length ? (
-              loras.map((l) => (
-                <PopoverItem
-                  key={l.id}
-                  active={s.loras.includes(l.id)}
-                  onClick={() => s.toggleLora(l.id)}
-                >
-                  <span className="flex-1">{l.name}</span>
-                  {s.loras.includes(l.id) && <span className="text-xs">✓</span>}
-                </PopoverItem>
-              ))
-            ) : (
-              <p className="px-2 py-2 text-xs text-faint">No LoRAs found</p>
-            )}
-          </Popover>
+          {/* LoRA (grouped by family, one active variant per family) */}
+          <LoraPicker loras={loras} />
 
           {/* Aspect */}
           <Popover
             trigger={
               <Chip icon={<Ratio />} active>
-                {s.aspect}
+                {s.aspect === "custom" ? "Custom" : s.aspect}
               </Chip>
             }
           >
-            {(close) =>
-              ASPECTS.map((a) => (
-                <PopoverItem
-                  key={a.id}
-                  active={a.id === s.aspect}
-                  onClick={() => {
-                    s.patch({ aspect: a.id });
-                    close();
-                  }}
-                >
-                  <span className="flex-1">{a.label}</span>
-                  <span className="text-xs text-faint">{a.w}×{a.h}</span>
-                </PopoverItem>
-              ))
-            }
+            {(close) => (
+              <>
+                {s.referenceImage && (
+                  <PopoverItem
+                    active={s.aspect === "custom"}
+                    onClick={() => {
+                      s.patch({ aspect: "custom" });
+                      close();
+                    }}
+                  >
+                    <span className="flex-1">Custom</span>
+                    <span className="text-xs text-faint">
+                      {s.referenceImage.width}×{s.referenceImage.height}
+                    </span>
+                  </PopoverItem>
+                )}
+                {ASPECTS.map((a) => (
+                  <PopoverItem
+                    key={a.id}
+                    active={a.id === s.aspect}
+                    onClick={() => {
+                      s.patch({ aspect: a.id });
+                      close();
+                    }}
+                  >
+                    <span className="flex-1">{a.label}</span>
+                    <span className="text-xs text-faint">{a.w}×{a.h}</span>
+                  </PopoverItem>
+                ))}
+              </>
+            )}
           </Popover>
 
           {/* Reference upload */}

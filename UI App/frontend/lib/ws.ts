@@ -5,6 +5,7 @@ export interface JobSocketHandlers {
   onProgress?: (progress: number, status: string) => void;
   onDone?: (images: ImageOut[], ids: string[]) => void;
   onError?: (message: string) => void;
+  onCanceled?: () => void;
 }
 
 /** Open a WebSocket to stream a generation job's progress. Returns the socket. */
@@ -19,7 +20,11 @@ export function openJobSocket(jobId: string, handlers: JobSocketHandlers): WebSo
       return;
     }
     const type = ev.type as string;
-    if (type === "progress" || type === "snapshot") {
+    // A snapshot can report an already-terminal state (e.g. canceled) on reconnect.
+    if (type === "canceled" || (type === "snapshot" && ev.status === "canceled")) {
+      handlers.onCanceled?.();
+      ws.close();
+    } else if (type === "progress" || type === "snapshot") {
       handlers.onProgress?.((ev.progress as number) ?? 0, (ev.status as string) ?? "running");
     } else if (type === "done") {
       handlers.onDone?.(

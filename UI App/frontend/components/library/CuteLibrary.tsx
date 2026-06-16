@@ -48,56 +48,51 @@ export function CuteLibrary({
 
   return (
     <div
-      className="relative h-full overflow-hidden rounded-xl bg-paper"
+      className="relative flex h-full flex-col overflow-hidden rounded-xl bg-paper"
       onWheel={(e) => {
         if (Math.abs(e.deltaY) > 8 || Math.abs(e.deltaX) > 8)
           go(e.deltaY + e.deltaX > 0 ? 1 : -1);
       }}
     >
-      {/* Stage */}
+      {/* Stage — takes all available space, centres the coverflow inside */}
       <div
-        className="relative flex h-[70%] items-center justify-center"
+        className="relative flex flex-1 items-center justify-center"
         style={{ perspective: "1400px" }}
       >
-        <div
-          className="relative h-full w-full"
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          {images.map((img, i) => {
-            const offset = i - active;
-            const abs = Math.abs(offset);
-            const visible = abs <= 6;
-            const rotateY = offset === 0 ? 0 : offset < 0 ? 44 : -44;
-            const translateX = offset * 130;
-            const translateZ = offset === 0 ? 80 : -abs * 40;
-            const scale = offset === 0 ? 1 : 0.82;
-            return (
-              <button
-                key={img.id}
-                onClick={() => (offset === 0 ? onOpen(img) : setActive(i))}
-                className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl transition-all duration-500 ease-out sm:h-72 sm:w-72"
-                style={{
-                  transform: `translate(-50%, -50%) translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
-                  zIndex: 100 - abs,
-                  opacity: visible ? 1 : 0,
-                  pointerEvents: visible ? "auto" : "none",
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={mediaUrl(img.thumb_url || img.url)}
-                  alt={img.prompt ?? "image"}
-                  className="h-full w-full object-cover"
-                  draggable={false}
-                />
-              </button>
-            );
-          })}
-        </div>
+        {images.map((img, i) => {
+          const offset = i - active;
+          const abs = Math.abs(offset);
+          const visible = abs <= 6;
+          const rotateY = offset === 0 ? 0 : offset < 0 ? 44 : -44;
+          const translateX = offset * 140;
+          const translateZ = offset === 0 ? 80 : -abs * 40;
+          const scale = offset === 0 ? 1 : 0.82;
+          return (
+            <button
+              key={img.id}
+              onClick={() => (offset === 0 ? onOpen(img) : setActive(i))}
+              className="absolute h-64 w-64 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl transition-all duration-500 ease-out sm:h-80 sm:w-80"
+              style={{
+                transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                zIndex: 100 - abs,
+                opacity: visible ? 1 : 0,
+                pointerEvents: visible ? "auto" : "none",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={mediaUrl(img.thumb_url || img.url)}
+                alt={img.prompt ?? "image"}
+                className="h-full w-full object-cover"
+                draggable={false}
+              />
+            </button>
+          );
+        })}
       </div>
 
-      {/* Caption + controls */}
-      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3 p-6 text-paper-ink">
+      {/* Caption + controls — fixed height at the bottom */}
+      <div className="flex shrink-0 flex-col items-center gap-3 pb-6 pt-4 text-paper-ink">
         <p className="line-clamp-1 max-w-md text-center text-sm text-paper-ink/70">
           {activeImg.prompt || activeImg.filename}
         </p>

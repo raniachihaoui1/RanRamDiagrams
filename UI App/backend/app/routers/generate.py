@@ -69,6 +69,17 @@ def get_job(job_id: str, db: Session = Depends(get_db)) -> JobOut:
     )
 
 
+@router.post("/api/jobs/{job_id}/cancel", response_model=JobOut)
+async def cancel_job(job_id: str, db: Session = Depends(get_db)) -> JobOut:
+    canceled = await job_manager.cancel(job_id)
+    if not canceled:
+        # Either unknown or already in a terminal state — report current status.
+        state = job_manager.get_state(job_id)
+        if state is None and db.get(GenerationJob, job_id) is None:
+            raise HTTPException(404, "job not found")
+    return JobOut(id=job_id, status="canceled", progress=0.0)
+
+
 @router.websocket("/ws/jobs/{job_id}")
 async def job_ws(websocket: WebSocket, job_id: str) -> None:
     await websocket.accept()
@@ -78,13 +89,13 @@ async def job_ws(websocket: WebSocket, job_id: str) -> None:
         state = job_manager.get_state(job_id)
         if state:
             await websocket.send_json({"type": "snapshot", **state})
-            if state.get("status") in ("done", "error"):
+            if state.get("status") in ("done", "error", "canceled"):
                 return
 
         while True:
             event = await q.get()
             await websocket.send_json(event)
-            if event.get("type") in ("done", "error"):
+            if event.get("type") in ("done", "error", "canceled"):
                 break
     except WebSocketDisconnect:
         pass

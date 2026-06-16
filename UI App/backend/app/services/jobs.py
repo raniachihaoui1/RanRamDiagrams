@@ -22,7 +22,10 @@ class JobManager:
     def __init__(self) -> None:
         self._states: dict[str, dict[str, Any]] = {}
         self._subs: dict[str, set[asyncio.Queue]] = {}
-        self._tasks: set[asyncio.Task] = set()
+        self._tasks: dict[str, asyncio.Task] = {}
+        # Per-job run metadata reported by the comfy client (e.g. prompt_id),
+        # used to target a cancel request at the right ComfyUI run.
+        self._meta: dict[str, dict[str, Any]] = {}
 
     # ---- pub/sub -------------------------------------------------------
     def subscribe(self, job_id: str) -> asyncio.Queue:
@@ -53,19 +56,22 @@ class JobManager:
         self._states[job_id] = {"status": "queued", "progress": 0.0,
                                 "result_image_ids": [], "error": None}
         task = asyncio.create_task(self._run(job_id, params))
-        self._tasks.add(task)
-        task.add_done_callback(self._tasks.discard)
+        self._tasks[job_id] = task
+        task.add_done_callback(lambda _t, jid=job_id: self._tasks.pop(jid, None))
 
     async def _run(self, job_id: str, params: GenParams) -> None:
         async def on_progress(progress: float, status: str) -> None:
             await self._publish(job_id, {"type": "progress", "status": status,
                                          "progress": round(progress, 4)})
 
+        def on_meta(meta: dict[str, Any]) -> None:
+            self._meta[job_id] = {**self._meta.get(job_id, {}), **meta}
+
         try:
             client = get_comfy_client()
             await self._publish(job_id, {"type": "progress", "status": "running",
                                          "progress": 0.0})
-            images = await client.generate(params, on_progress)
+            images = await client.generate(params, on_progress, on_meta)
 
             # Persist images (sync DB + PIL) off the event loop
             outs = await asyncio.to_thread(self._persist, job_id, params, images)
@@ -77,7 +83,7 @@ class JobManager:
                 "result_image_ids": [o["id"] for o in outs],
                 "images": outs,
             })
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 — CancelledError (BaseException) is left to propagate
             import traceback
             traceback.print_exc()
             await self._publish(job_id, {"type": "error", "status": "error",
@@ -87,6 +93,36 @@ class JobManager:
                 if job:
                     job.status = "error"
                     job.error = str(exc)
+        finally:
+            self._meta.pop(job_id, None)
+
+    async def cancel(self, job_id: str) -> bool:
+        """Cancel a running job: tell ComfyUI to stop it, cancel the asyncio
+        task, and notify subscribers. Returns False if the job isn't cancellable
+        (unknown, already finished, or already cancelled)."""
+        task = self._tasks.get(job_id)
+        state = self._states.get(job_id)
+        if task is None or (state and state.get("status") in ("done", "error", "canceled")):
+            return False
+
+        # Stop the run inside ComfyUI first (best-effort), then drop the task.
+        try:
+            await get_comfy_client().cancel(self._meta.get(job_id, {}))
+        except Exception:  # noqa: BLE001 — a failed interrupt shouldn't block local cancel
+            import traceback
+            traceback.print_exc()
+        task.cancel()
+
+        await self._publish(job_id, {
+            "type": "canceled",
+            "status": "canceled",
+            "progress": (state or {}).get("progress", 0.0),
+        })
+        with session_scope() as db:
+            job = db.get(GenerationJob, job_id)
+            if job:
+                job.status = "canceled"
+        return True
 
     def _persist(self, job_id: str, params: GenParams, images: list[bytes]) -> list[dict]:
         outs: list[dict] = []

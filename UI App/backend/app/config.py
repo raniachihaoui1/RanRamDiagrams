@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     )
 
     # Branding
-    app_name: str = "RanRam Studio"
+    app_name: str = "Diagram Studio"
 
     # ComfyUI integration
     comfy_mode: str = "mock"  # "mock" | "real"

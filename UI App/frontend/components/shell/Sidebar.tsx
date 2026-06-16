@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/config";
+import { ThemeToggle } from "@/components/shell/ThemeToggle";
 
 type NavItem = { href: string; label: string; icon: React.ElementType };
 
@@ -96,16 +97,17 @@ export function Sidebar() {
         </Link>
       </nav>
 
-      {/* Account */}
+      {/* Account + theme toggle */}
       <div className="border-t border-border p-3">
-        <div className="flex items-center gap-3 rounded-md px-2 h-11">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-surface-2 text-xs font-semibold">
+        <div className="flex items-center gap-2 rounded-md px-2 h-11">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-surface-2 text-xs font-semibold shrink-0">
             R
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">Local workspace</p>
             <p className="truncate text-xs text-faint">Mock mode</p>
           </div>
+          <ThemeToggle />
         </div>
       </div>
     </aside>

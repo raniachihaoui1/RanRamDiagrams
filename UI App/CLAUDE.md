@@ -38,17 +38,22 @@ cd frontend; npm run build          # production build (typechecks too)
 
 ## Frontend routes
 
-- `app/page.tsx` — Welcome/landing at `/` (marketing, no sidebar). Uses only the root layout.
+- `app/page.tsx` — Server redirect from `/` → `/dashboard` (landing page removed).
 - `app/(app)/layout.tsx` — app shell (Sidebar + scrollable main) wrapping the tool routes: `/dashboard`, `/generate`, `/canvas`, `/train`, `/library`. The `(app)` route group adds no URL segment.
-- `app/providers.tsx` — TanStack Query provider, mounted in the root layout.
+- `app/providers.tsx` — TanStack Query + `ThemeApplier` (applies `.dark` class on `<html>` from the theme store on mount).
 - Data access goes through `lib/api.ts` (typed `api.*` client + `mediaUrl()` to absolutize backend image paths). Backend image URLs are relative; always wrap with `mediaUrl()`.
+- **Theming** (`lib/theme.ts`): Zustand store (`theme: "light"|"dark"`, default `"light"`) with manual `localStorage` persistence (no zustand/persist — avoids SSR crash). `hydrateTheme()` is called on mount. CSS tokens live in `:root` (light) and `.dark` (dark) in `globals.css`; `@theme inline` maps them to Tailwind classes. Toggle (Sun/Moon) in the Sidebar footer.
 
 ## Generator (Phase 3)
 
 - State lives in `store/generator.ts` (Zustand): prompt-bar settings (prompt, model, loras[], aspect, count, seed, negative, mode, referenceImage, referenceWeight) + a `generations[]` feed. `submit()` posts `/api/generate`, prepends a running `Generation`, then opens a WS via `lib/ws.openJobSocket` and patches that generation as `progress`/`done`/`error` arrive. Pass `afterDone` to invalidate the `["images"]` query.
-- `components/generate/PromptBar.tsx` — the floating glass bar: chips (Model, LoRA multi-select, Aspect, Reference upload→img2img, Count 1–4, Settings) using `components/ui/Popover` + `Slider`. img2img is the same page: uploading a reference switches `mode` and reveals the weight slider.
-- `components/generate/GenerationFeed.tsx` — renders the feed; running generations show N `GeneratingCard` placeholders that swap to results on done.
-- `components/media/ImageModal.tsx` — shared lightbox (download/favorite/delete); reused by the Library.
+- **Custom size**: when a reference image is set, `aspect` switches to `"custom"` and `submit()` mirrors the input image's dimensions (rounded to multiples of 16 for FLUX). The Aspect pill shows "Custom" + the real pixel dimensions. Clearing the reference restores `"1:1"`.
+- `components/generate/PromptBar.tsx` — the floating glass bar: chips (Model, LoRA grouped picker, Aspect, Reference upload→img2img, Count 1–4, Settings) using `components/ui/Popover` + `Slider`. img2img is the same page: uploading a reference switches `mode`, sets `aspect: "custom"`, and reveals the weight slider.
+- `components/generate/LoraPicker.tsx` — LoRA selector: groups variants by family, one row per family with ◀ ▶ stepper; **only one LoRA active at a time** (selecting any clears the previous). Single-variant families render as plain rows.
+- **LoRA family registry** (`lib/loras.ts`): per-family config keyed by the family base name — `display` (chip label), `keyword` (hidden trigger token), `defaultStep` (pre-selected step), `hidden` (omit). Active families: `constructive` (technical_drawing, kw `technical_drawing`, step 1250), `conceptual` (ranram_arch_diagrams_v2.0, kw `ranram_arch_diagram`, step 1000), `linework` (ranram_arch_diagrams_v3.0, kw `technical_drawing`, step 1250). Hidden: `arctic_modern` (sub-trained), `big_ran_ram`, `optimizer`, `sdxl_lightning_8step_lora`. On selection `LoraPicker` writes `loraTriggers` (id→keyword); `submit()` prepends `keyword, ` to the ComfyUI prompt (never shown in the textarea or feed).
+- **Generation cancellation**: `POST /api/jobs/{id}/cancel` cancels the asyncio task and tells ComfyUI to stop via `DELETE /queue` + `POST /interrupt`. The WS emits `{"type":"canceled"}`; the frontend shows a "Generation canceled" card. Cancel button (✕) appears next to the prompt while the job is running. `store/generator.ts` holds a `jobSockets` map to close the WS immediately on cancel.
+- `components/generate/GenerationFeed.tsx` — renders the feed; running cards show progress + a Cancel button; done/error/canceled cards show the appropriate state.
+- `components/media/ImageModal.tsx` — shared lightbox (download/favorite/delete); shows **LoRA** (display name, e.g. "conceptual") and **Steps** (step number) as separate metadata fields, derived from the saved LoRA id via `lib/loras.describeLora()`.
 
 ## Library (Phase 4)
 
@@ -66,7 +71,7 @@ cd frontend; npm run build          # production build (typechecks too)
 
 - Frontend builds to **standalone** output (`next.config.ts` `output: "standalone"`); `frontend/Dockerfile` + `backend/Dockerfile` + `docker-compose.yml` cover deploy (`docker compose up --build`). `storage/` mounts as a volume.
 - The full mock flow is verified end-to-end: generate → job WS → images persisted → library → file serving → CORS, and all six routes render. When debugging, note `next dev` falls back to **:3001** if :3000 is taken — check the dev log for the actual port.
-- Real mode (COMFY_MODE=real) is wired end-to-end for img2img: upload reference → POST /prompt to ComfyUI → WS progress → /history → /view download. Verified with FLUX.2 Klein workflow.
+- Real mode (COMFY_MODE=real) is wired end-to-end for both **txt2img** and **img2img**: `comfy/real.py` routes to `flux_txt2img.json` (no reference) or `flux_img2img.json` (with reference) and injects params via separate node maps (`_inject_txt2img` / `_inject_img2img`). `workflows/flux_txt2img.json` ships in the repo (FLUX.2 Klein, node root `678:*`). Verified with FLUX.2 Klein workflow.
 
 ## Architecture notes
 
