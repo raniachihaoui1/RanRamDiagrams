@@ -29,6 +29,32 @@ Copy-Item .env.example .env
 
 Then open http://localhost:3000 (if 3000 is busy, Next falls back to :3001 — check the dev log). Full details, deploy, and going mock → real ComfyUI are in [`UI App/README.md`](UI%20App/README.md).
 
+### Rhino live viewport
+
+Stream your Rhino 8 viewport directly into the app for use as an img2img reference.
+
+**Step 1 — Make sure the app is running** (`./dev.ps1` from `UI App/`).
+
+**Step 2 (optional) — Verify without Rhino** using the animated test source:
+
+```powershell
+# from UI App/
+backend/.venv/Scripts/python rhino/test_source.py    # Ctrl-C to stop
+```
+
+Open the app → Image → click the **Rhino viewport** button in the generator header. You should see an animated test pattern at ~6 FPS.
+
+**Step 3 — Stream the real viewport from Rhino 8:**
+
+1. In Rhino, open the **ScriptEditor** (`Tools → PythonScript → Edit`).
+2. Open the file `UI App/rhino/viewport_stream.py`.
+3. Click **Run**. On the first run it auto-installs `websocket-client` (needs internet).
+4. The live viewport appears in the app panel.
+5. Click **"Use frame as reference"** to snapshot the current frame as the img2img input — the Aspect chip switches to **Custom** and matches the frame's resolution automatically.
+6. Press **Esc** in Rhino (or close the ScriptEditor) to stop streaming.
+
+> The streamer captures the active viewport at ~6 FPS as JPEG and sends it to the backend hub (`ws://localhost:8000/ws/rhino`), which relays it to the web viewer in real time. The Rhino script auto-reconnects if the app restarts.
+
 ---
 
 ## 1. Overview
