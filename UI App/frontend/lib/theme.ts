@@ -1,22 +1,37 @@
+"use client";
+
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 type Theme = "light" | "dark";
 
 interface ThemeState {
   theme: Theme;
   toggle: () => void;
-  setTheme: (t: Theme) => void;
 }
 
-export const useThemeStore = create<ThemeState>()(
-  persist(
-    (set) => ({
-      theme: "light",
-      toggle: () =>
-        set((s) => ({ theme: s.theme === "light" ? "dark" : "light" })),
-      setTheme: (theme) => set({ theme }),
+const STORAGE_KEY = "diagram-studio-theme";
+
+function readStored(): Theme {
+  if (typeof window === "undefined") return "light";
+  try {
+    const v = localStorage.getItem(STORAGE_KEY);
+    return v === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+export const useThemeStore = create<ThemeState>((set) => ({
+  theme: "light", // SSR-safe default; hydrated on mount via ThemeApplier
+  toggle: () =>
+    set((s) => {
+      const next: Theme = s.theme === "light" ? "dark" : "light";
+      try { localStorage.setItem(STORAGE_KEY, next); } catch { /* noop */ }
+      return { theme: next };
     }),
-    { name: "diagram-studio-theme" }
-  )
-);
+}));
+
+/** Call once on mount to load the persisted preference. */
+export function hydrateTheme() {
+  useThemeStore.setState({ theme: readStored() });
+}

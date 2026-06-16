@@ -2,10 +2,16 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { useThemeStore } from "@/lib/theme";
+import { useThemeStore, hydrateTheme } from "@/lib/theme";
 
 function ThemeApplier() {
   const theme = useThemeStore((s) => s.theme);
+
+  // On first mount, load the stored preference from localStorage.
+  useEffect(() => {
+    hydrateTheme();
+  }, []);
+
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") {
@@ -14,6 +20,7 @@ function ThemeApplier() {
       root.classList.remove("dark");
     }
   }, [theme]);
+
   return null;
 }
 
