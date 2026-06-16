@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { X } from "lucide-react";
+import { X, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { mediaUrl } from "@/lib/api";
-import { useStoryStore } from "@/store/storyline";
+import { useStoryStore, CAPTION_FONTS } from "@/store/storyline";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -99,13 +99,116 @@ export function StoryInspector({ onPickImage }: { onPickImage: (index: number) =
                 type="number"
                 value={s.captionH}
                 min={0}
-                max={120}
+                max={160}
                 step={8}
                 onChange={(e) => s.setCaptionH(Number(e.target.value))}
                 className="h-8 w-full rounded border border-border bg-surface px-2 text-sm outline-none"
               />
             </label>
           </div>
+
+          {/* Caption typography — only shown when there is a caption area */}
+          {s.captionH > 0 && (
+            <div className="space-y-2.5 rounded-lg border border-border bg-surface/50 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-faint">
+                Caption style
+              </p>
+
+              {/* Font family */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-faint">Font</span>
+                <select
+                  value={s.captionFontFamily}
+                  onChange={(e) => s.setCaptionFontFamily(e.target.value)}
+                  className="h-8 w-full rounded border border-border bg-surface px-2 text-sm outline-none"
+                  style={{ fontFamily: s.captionFontFamily }}
+                >
+                  {CAPTION_FONTS.map((f) => (
+                    <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {/* Size + Bold + Color */}
+              <div className="flex items-end gap-2">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-faint">Size (px)</span>
+                  <input
+                    type="number"
+                    value={s.captionFontSize}
+                    min={8}
+                    max={48}
+                    step={1}
+                    onChange={(e) => s.setCaptionFontSize(Number(e.target.value))}
+                    className="h-8 w-16 rounded border border-border bg-surface px-2 text-sm outline-none tabular-nums"
+                  />
+                </label>
+
+                <button
+                  onClick={() => s.setCaptionBold(!s.captionBold)}
+                  title="Bold"
+                  className={cn(
+                    "h-8 w-8 shrink-0 rounded border text-sm font-bold transition-colors",
+                    s.captionBold
+                      ? "border-foreground bg-elevated text-foreground"
+                      : "border-border text-muted hover:bg-surface-2"
+                  )}
+                >
+                  B
+                </button>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-faint">Color</span>
+                  <input
+                    type="color"
+                    value={s.captionColor}
+                    onChange={(e) => s.setCaptionColor(e.target.value)}
+                    className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs text-faint">Bg</span>
+                  <input
+                    type="color"
+                    value={s.captionBg}
+                    onChange={(e) => s.setCaptionBg(e.target.value)}
+                    className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                  />
+                </label>
+              </div>
+
+              {/* Alignment */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-faint">Align</span>
+                <div className="flex gap-0.5">
+                  {(
+                    [
+                      { value: "left",   icon: AlignLeft },
+                      { value: "center", icon: AlignCenter },
+                      { value: "right",  icon: AlignRight },
+                    ] as const
+                  ).map(({ value, icon: Icon }) => (
+                    <button
+                      key={value}
+                      onClick={() => s.setCaptionAlign(value)}
+                      title={value}
+                      className={cn(
+                        "grid h-7 w-7 place-items-center rounded transition-colors",
+                        s.captionAlign === value
+                          ? "bg-elevated text-foreground"
+                          : "text-muted hover:bg-surface-2 hover:text-foreground"
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Backgrounds */}
           <div className="flex gap-3">

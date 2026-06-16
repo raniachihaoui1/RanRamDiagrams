@@ -17,6 +17,8 @@ export function StoryCellCard({
     cells, selectedIndex, selectCell,
     autoNumber, numberStyle, numberColor, numberBg,
     cellBg, cellW, cellH, captionH,
+    captionFontFamily, captionFontSize, captionBold,
+    captionColor, captionAlign, captionBg,
   } = useStoryStore();
 
   const cell = cells.find((c) => c.index === index);
@@ -91,15 +93,23 @@ export function StoryCellCard({
       {/* Caption area */}
       {captionH > 0 && (
         <div
-          className="flex items-center bg-background px-2"
-          style={{ height: captionH }}
+          className="flex items-center overflow-hidden px-2"
+          style={{ height: captionH, background: captionBg }}
         >
           <p
-            className="line-clamp-2 w-full text-xs text-muted"
-            style={{ fontSize: 12 }}
+            className="line-clamp-2 w-full"
+            style={{
+              fontSize: captionFontSize,
+              fontFamily: captionFontFamily,
+              fontWeight: captionBold ? "bold" : "normal",
+              color: cell.caption ? captionColor : undefined,
+              textAlign: captionAlign,
+            }}
           >
             {cell.caption || (
-              <span className="text-faint italic">Caption…</span>
+              <span style={{ color: "#aaa", fontStyle: "italic", fontWeight: "normal" }}>
+                Caption…
+              </span>
             )}
           </p>
         </div>

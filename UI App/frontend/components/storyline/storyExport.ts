@@ -1,6 +1,6 @@
 import { mediaUrl } from "@/lib/api";
 import type { StoryProject } from "@/store/storyline";
-import { cellNumber } from "@/store/storyline";
+import { cellNumber, captionFont } from "@/store/storyline";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -49,6 +49,8 @@ export async function exportStoryPng(project: StoryProject): Promise<void> {
   const {
     cols, rows, cellW, cellH, captionH, gap, padding,
     outerBg, cellBg, autoNumber, numberStyle, numberColor, numberBg,
+    captionFontFamily, captionFontSize, captionBold, captionColor,
+    captionAlign, captionBg,
     cells, name,
   } = project;
 
@@ -83,8 +85,6 @@ export async function exportStoryPng(project: StoryProject): Promise<void> {
 
   const BADGE_R = 16;
   const BADGE_FONT = Math.round(BADGE_R * 1.1);
-  const CAPTION_FONT = 14;
-  const CAPTION_COLOR = "#1A1A1A";
 
   for (const cell of cells) {
     const col = cell.index % cols;
@@ -129,27 +129,41 @@ export async function exportStoryPng(project: StoryProject): Promise<void> {
       ctx.fillText(numText, bx, by);
     }
 
-    // ── Caption area (white band below image) ──
+    // ── Caption area ──
     if (captionH > 0) {
-      ctx.fillStyle = outerBg;
+      ctx.fillStyle = captionBg;
       ctx.fillRect(x, y + cellH, cellW, captionH);
 
       if (cell.caption.trim()) {
-        ctx.fillStyle = CAPTION_COLOR;
-        ctx.font = `${CAPTION_FONT}px ui-sans-serif, system-ui, sans-serif`;
-        ctx.textAlign = "left";
+        const font = captionFont(captionBold, captionFontSize, captionFontFamily);
+        ctx.font = font;
+        ctx.fillStyle = captionColor;
         ctx.textBaseline = "middle";
-        // Truncate to single line for simplicity
-        const maxW = cellW - 8;
+
+        const hPad = 8;
+        const maxW = cellW - hPad * 2;
+
+        // Compute x based on alignment
+        let tx: number;
+        if (captionAlign === "center") {
+          ctx.textAlign = "center";
+          tx = x + cellW / 2;
+        } else if (captionAlign === "right") {
+          ctx.textAlign = "right";
+          tx = x + cellW - hPad;
+        } else {
+          ctx.textAlign = "left";
+          tx = x + hPad;
+        }
+
+        // Truncate to one line if too long
         let txt = cell.caption;
-        while (txt.length > 1 && ctx.measureText(txt + "…").width > maxW) {
+        while (txt.length > 1 && ctx.measureText(txt).width > maxW) {
           txt = txt.slice(0, -1);
         }
-        ctx.fillText(
-          txt === cell.caption ? txt : txt + "…",
-          x + 4,
-          y + cellH + captionH / 2
-        );
+        if (txt !== cell.caption) txt += "…";
+
+        ctx.fillText(txt, tx, y + cellH + captionH / 2);
       }
     }
   }
