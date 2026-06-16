@@ -38,10 +38,11 @@ cd frontend; npm run build          # production build (typechecks too)
 
 ## Frontend routes
 
-- `app/page.tsx` — Welcome/landing at `/` (marketing, no sidebar). Uses only the root layout.
+- `app/page.tsx` — Server redirect from `/` → `/dashboard` (landing page removed).
 - `app/(app)/layout.tsx` — app shell (Sidebar + scrollable main) wrapping the tool routes: `/dashboard`, `/generate`, `/canvas`, `/train`, `/library`. The `(app)` route group adds no URL segment.
-- `app/providers.tsx` — TanStack Query provider, mounted in the root layout.
+- `app/providers.tsx` — TanStack Query + `ThemeApplier` (applies `.dark` class on `<html>` from the theme store on mount).
 - Data access goes through `lib/api.ts` (typed `api.*` client + `mediaUrl()` to absolutize backend image paths). Backend image URLs are relative; always wrap with `mediaUrl()`.
+- **Theming** (`lib/theme.ts`): Zustand store (`theme: "light"|"dark"`, default `"light"`) with manual `localStorage` persistence (no zustand/persist — avoids SSR crash). `hydrateTheme()` is called on mount. CSS tokens live in `:root` (light) and `.dark` (dark) in `globals.css`; `@theme inline` maps them to Tailwind classes. Toggle (Sun/Moon) in the Sidebar footer.
 
 ## Generator (Phase 3)
 
