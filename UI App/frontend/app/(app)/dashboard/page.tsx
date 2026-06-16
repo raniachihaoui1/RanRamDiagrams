@@ -29,7 +29,7 @@ export default function DashboardPage() {
         <div className="pointer-events-none absolute right-[-60px] top-[-60px] h-64 w-64 rounded-full bg-white/[0.04] blur-3xl" />
         <h1 className="text-3xl font-semibold tracking-tight">Start creating</h1>
         <p className="mt-2 max-w-md text-muted">
-          Generate BIG-style diagrams from a prompt or a reference image, then
+          Generate Architecural diagrams from a prompt or a reference image, then
           refine them on the canvas.
         </p>
         <div className="mt-6 flex gap-3">
