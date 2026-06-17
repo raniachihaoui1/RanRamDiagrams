@@ -14,9 +14,9 @@ A Krea-style web app that uses these LoRAs with ComfyUI workflows (generate, ima
 cd "UI App"
 
 # 1. Backend deps
-python -m venv backend/renv
-backend/renv/Scripts/pip install -r backend/requirements.txt
-backend/renv/Scripts/Activate.ps1
+python -m venv backend/.venv
+backend/.venv/Scripts/pip install -r backend/requirements.txt
+backend/.venv/Scripts/Activate.ps1
 
 # 2. Frontend deps
 cd "UI App\frontend"; npm install
@@ -40,7 +40,7 @@ Stream your Rhino 8 viewport directly into the app for use as an img2img referen
 
 ```powershell
 # from UI App/
-backend/renv/Scripts/python rhino/test_source.py    # Ctrl-C to stop
+backend/.venv/Scripts/python rhino/test_source.py    # Ctrl-C to stop
 ```
 
 Open the app → Image → click the **Rhino viewport** button in the generator header. You should see an animated test pattern at ~6 FPS.

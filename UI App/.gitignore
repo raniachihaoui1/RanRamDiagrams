@@ -1,14 +1,16 @@
 # ---- Node / Next.js ----
 frontend/node_modules/
 frontend/.next/
+frontend/.next.bak/
 frontend/out/
 frontend/.turbo/
 frontend/next-env.d.ts
 npm-debug.log*
 
 # ---- Python ----
-backend/renv/
+backend/.venv/
 backend/venv/
+backend/renv/
 **/__pycache__/
 *.py[cod]
 .pytest_cache/

@@ -7,7 +7,7 @@ that proves the backend hub + the web viewer work before you wire up real Rhino.
 
 Run it with the backend venv (already has `websockets` + `pillow` — no extra deps):
 
-    UI App> backend/renv/Scripts/python rhino/test_source.py
+    UI App> backend/.venv/Scripts/python rhino/test_source.py
     # options:  --url ws://127.0.0.1:8000/ws/rhino?role=source  --fps 6  --seconds 0
 
 `--seconds 0` (default) streams until you press Ctrl-C.
@@ -30,7 +30,7 @@ try:
 except Exception as exc:  # pragma: no cover
     raise SystemExit(
         "Missing 'websockets' — run with the backend venv:\n"
-        "    backend/renv/Scripts/python rhino/test_source.py\n"
+        "    backend/.venv/Scripts/python rhino/test_source.py\n"
         f"(import error: {exc})"
     )
 

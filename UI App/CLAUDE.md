@@ -22,8 +22,8 @@ Design language: **90% Krea**, Apple-like — dark base, rounded corners, glassm
 
 ```powershell
 # First-time setup
-python -m venv backend/renv
-backend/renv/Scripts/pip install -r backend/requirements.txt
+python -m venv backend/.venv
+backend/.venv/Scripts/pip install -r backend/requirements.txt
 cd frontend; npm install; cd ..
 Copy-Item .env.example .env
 
@@ -31,7 +31,7 @@ Copy-Item .env.example .env
 ./dev.ps1
 
 # Individually
-backend/renv/Scripts/python -m uvicorn app.main:app --reload --port 8000   # run from backend/
+backend/.venv/Scripts/python -m uvicorn app.main:app --reload --port 8000   # run from backend/
 cd frontend; npm run dev            # frontend
 cd frontend; npm run build          # production build (typechecks too)
 ```

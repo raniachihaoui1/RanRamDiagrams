@@ -1,8 +1,8 @@
 # Dev launcher — starts the FastAPI backend and the Next.js frontend together.
-# Usage (from "UI App/" with renv activated):  ./dev.ps1
+# Usage (from "UI App/"):  ./dev.ps1
 #
 # First time only:
-#   python -m venv backend/renv ; backend/renv/Scripts/pip install -r backend/requirements.txt
+#   python -m venv backend/.venv ; backend/.venv/Scripts/pip install -r backend/requirements.txt
 #   cd frontend ; npm install ; cd ..
 #   Copy-Item .env.example .env
 
@@ -16,7 +16,7 @@ if (-not (Test-Path "$root/.env")) {
 }
 
 # Resolve python (prefer venv)
-$venvPy = "$root/backend/renv/Scripts/python.exe"
+$venvPy = "$root/backend/.venv/Scripts/python.exe"
 $python = if (Test-Path $venvPy) { $venvPy } else { "python" }
 
 Write-Host "Starting backend (FastAPI) on http://127.0.0.1:8000 ..." -ForegroundColor Cyan

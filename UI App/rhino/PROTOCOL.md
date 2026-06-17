@@ -12,7 +12,7 @@ live; you run the Rhino-side script when you want real frames.
    in the Image Generator — you should see an animated test pattern:
    ```powershell
    # from UI App/
-   backend/renv/Scripts/python rhino/test_source.py     # Ctrl-C to stop
+   backend/.venv/Scripts/python rhino/test_source.py     # Ctrl-C to stop
    ```
 3. **Stream the real viewport** from Rhino 8: open `rhino/viewport_stream.py` in
    Rhino's ScriptEditor (Python 3) and Run it. First run installs the client:

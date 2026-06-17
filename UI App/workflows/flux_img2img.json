@@ -154,7 +154,7 @@
   },
   "760:747": {
     "inputs": {
-      "clip_name": "qwen_3_4b_fp4_flux2.safetensors",
+      "clip_name": "qwen_3_8b_fp8mixed.safetensors",
       "type": "flux2",
       "device": "default"
     },

@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # ComfyUI integration
     comfy_mode: str = "auto"  # "auto" | "mock" | "real"
     comfy_url: str = "http://127.0.0.1:8188"
-    comfy_dir: str = "C:/Users/Win11/ComfyUI"
+    comfy_dir: str = ""
 
     # Server
     host: str = "127.0.0.1"
