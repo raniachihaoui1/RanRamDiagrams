@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     )
 
     # Branding
-    app_name: str = "Diagram Studio"
+    app_name: str = "RanRam Studio"
 
     # ComfyUI integration
     comfy_mode: str = "mock"  # "mock" | "real"
@@ -83,6 +83,10 @@ class Settings(BaseSettings):
         return self.storage_path / "canvas_projects"
 
     @property
+    def training_datasets_path(self) -> Path:
+        return self.storage_path / "training_datasets"
+
+    @property
     def db_path(self) -> Path:
         return self.storage_path / "app.db"
 
@@ -99,6 +103,7 @@ class Settings(BaseSettings):
             self.uploads_path,
             self.canvas_projects_path,
             self.workflows_path,
+            self.training_datasets_path,
         ):
             p.mkdir(parents=True, exist_ok=True)
 

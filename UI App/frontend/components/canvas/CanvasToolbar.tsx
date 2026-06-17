@@ -9,6 +9,7 @@ import {
   MoveUpRight,
   Stamp,
   Undo2,
+  Redo2,
   Trash2,
 } from "lucide-react";
 import { useCanvasStore, PALETTE, type Tool } from "@/store/canvas";
@@ -26,7 +27,7 @@ const TOOLS: { id: Tool; icon: React.ElementType; label: string }[] = [
 ];
 
 export function CanvasToolbar() {
-  const { tool, setTool, color, setColor, size, setSize, undo, clearActive } =
+  const { tool, setTool, color, setColor, size, setSize, undo, redo, undoStack, redoStack, clearActive } =
     useCanvasStore();
 
   return (
@@ -88,15 +89,24 @@ export function CanvasToolbar() {
 
       <button
         onClick={undo}
-        title="Undo"
-        className="grid h-10 w-10 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-foreground"
+        disabled={undoStack.length === 0}
+        title="Undo (Ctrl+Z)"
+        className="grid h-10 w-10 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
       >
         <Undo2 className="h-[18px] w-[18px]" />
       </button>
       <button
+        onClick={redo}
+        disabled={redoStack.length === 0}
+        title="Redo (Ctrl+Y)"
+        className="grid h-10 w-10 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-30"
+      >
+        <Redo2 className="h-[18px] w-[18px]" />
+      </button>
+      <button
         onClick={clearActive}
         title="Clear layer"
-        className="grid h-10 w-10 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-foreground"
+        className="grid h-10 w-10 place-items-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
       >
         <Trash2 className="h-[18px] w-[18px]" />
       </button>

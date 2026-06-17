@@ -10,6 +10,7 @@ import {
   LibraryBig,
   Boxes,
   Plus,
+  Film,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/config";
@@ -20,6 +21,7 @@ type NavItem = { href: string; label: string; icon: React.ElementType };
 const TOOLS: NavItem[] = [
   { href: "/generate", label: "Image", icon: Sparkles },
   { href: "/canvas", label: "Canvas", icon: Brush },
+  { href: "/storyline", label: "Story Line", icon: Film },
   { href: "/train", label: "Train LoRA", icon: GraduationCap },
 ];
 

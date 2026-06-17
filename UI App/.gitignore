@@ -26,6 +26,7 @@ storage/images/*
 storage/thumbnails/*
 storage/uploads/*
 storage/canvas_projects/*
+storage/training_datasets/*
 storage/app.db
 !storage/**/.gitkeep
 

@@ -29,6 +29,9 @@ export interface Generation {
   progress: number;
   images: ImageOut[];
   error?: string;
+  width: number;
+  height: number;
+  referenceImage?: ImageOut; // img2img only — used for before/after comparison
 }
 
 /** Open job sockets, keyed by generation id, so a job can be cancelled/closed. */
@@ -139,6 +142,8 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
             progress: 0,
             images: [],
             error: e instanceof Error ? e.message : "request failed",
+            width,
+            height,
           },
           ...st.generations,
         ],
@@ -154,6 +159,9 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
       status: "running",
       progress: 0,
       images: [],
+      width,
+      height,
+      referenceImage: s.mode === "img2img" && s.referenceImage ? s.referenceImage : undefined,
     };
     set((st) => ({ generations: [gen, ...st.generations] }));
 

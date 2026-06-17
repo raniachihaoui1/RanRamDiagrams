@@ -16,8 +16,12 @@ import {
   Box,
   Layers,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Check,
 } from "lucide-react";
-import { api, mediaUrl, type ImageOut } from "@/lib/api";
+import { api, mediaUrl, type ImageOut, type ModelInfo } from "@/lib/api";
+import { loraFamily } from "@/lib/loras";
 import { openJobSocket } from "@/lib/ws";
 import { useCanvasStore } from "@/store/canvas";
 import { STAMPS, STAMP_CATEGORIES, STAMP_MAP } from "@/lib/stamps";
@@ -27,6 +31,135 @@ import { Popover, PopoverItem } from "@/components/ui/Popover";
 import { ImageGrid } from "@/components/media/ImageGrid";
 import { ImageModal } from "@/components/media/ImageModal";
 import { cn } from "@/lib/utils";
+
+// ── LoRA grouped picker (mirrors LoraPicker.tsx logic, wired to local state) ──
+
+interface Variant { id: string; label: string; sort: number; }
+interface LoraGroup { base: string; variants: Variant[]; }
+
+function parseLoraName(m: ModelInfo): { base: string; label: string; sort: number } {
+  const match = m.name.match(/^(.*?)[-_\s]+((?:v|ver|version|step|epoch|e)?\s*\d+)$/i);
+  if (match && match[1].trim()) {
+    const token = match[2].trim();
+    const num = parseInt(token.replace(/\D/g, ""), 10);
+    const prefix = token.replace(/\d+$/, "");
+    const label = Number.isNaN(num) ? token : `${prefix}${num}`;
+    return { base: match[1].trim(), label, sort: Number.isNaN(num) ? 0 : num };
+  }
+  return { base: m.name, label: m.name, sort: 0 };
+}
+
+function buildLoraGroups(loras: ModelInfo[]): LoraGroup[] {
+  const map = new Map<string, Variant[]>();
+  for (const m of loras) {
+    const { base, label, sort } = parseLoraName(m);
+    if (loraFamily(base).hidden) continue;
+    const list = map.get(base) ?? [];
+    list.push({ id: m.id, label, sort });
+    map.set(base, list);
+  }
+  return [...map.entries()]
+    .map(([base, variants]) => ({ base, variants: variants.sort((a, b) => a.sort - b.sort) }))
+    .sort((a, b) => loraDisplayName(a.base).localeCompare(loraDisplayName(b.base)));
+}
+
+const loraDisplayName = (base: string): string => loraFamily(base).display ?? base;
+
+function CanvasLoraGroupRow({
+  group,
+  selectedLora,
+  onSelect,
+}: {
+  group: LoraGroup;
+  selectedLora: string | null;
+  onSelect: (id: string | null, keyword: string | null) => void;
+}) {
+  const family = loraFamily(group.base);
+  const ids = React.useMemo(() => group.variants.map((v) => v.id), [group]);
+  const selectedId = ids.find((id) => id === selectedLora) ?? null;
+  const active = selectedId !== null;
+
+  const [idx, setIdx] = React.useState(() => {
+    const i = group.variants.findIndex((v) => v.id === selectedId);
+    if (i >= 0) return i;
+    const d =
+      family.defaultStep != null
+        ? group.variants.findIndex((v) => v.sort === family.defaultStep)
+        : -1;
+    return d >= 0 ? d : group.variants.length - 1;
+  });
+
+  React.useEffect(() => {
+    const i = group.variants.findIndex((v) => v.id === selectedId);
+    if (i >= 0 && i !== idx) setIdx(i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
+  const current = group.variants[idx];
+  const kw = family.keyword ?? null;
+
+  const toggle = () => onSelect(active ? null : current.id, active ? null : kw);
+
+  const step = (dir: number) => {
+    const next = (idx + dir + group.variants.length) % group.variants.length;
+    setIdx(next);
+    if (active) onSelect(group.variants[next].id, kw);
+  };
+
+  if (group.variants.length === 1) {
+    return (
+      <PopoverItem active={active} onClick={toggle}>
+        <span className="flex-1 truncate">{loraDisplayName(group.base)}</span>
+        {active && <Check className="h-3.5 w-3.5" />}
+      </PopoverItem>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1 rounded-md px-2.5 h-9 text-sm",
+        active ? "bg-elevated text-foreground" : "text-muted"
+      )}
+    >
+      <button
+        onClick={toggle}
+        className="flex min-w-0 flex-1 items-center gap-2 text-left hover:text-foreground"
+      >
+        <span
+          className={cn(
+            "grid h-4 w-4 shrink-0 place-items-center rounded border",
+            active ? "border-accent bg-accent text-accent-foreground" : "border-border"
+          )}
+        >
+          {active && <Check className="h-3 w-3" />}
+        </span>
+        <span className="truncate">{loraDisplayName(group.base)}</span>
+      </button>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button
+          onClick={() => step(-1)}
+          className="rounded p-0.5 text-muted hover:bg-surface hover:text-foreground"
+          aria-label="Previous variant"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <span className="w-12 truncate text-center text-xs tabular-nums text-faint">
+          {current.label}
+        </span>
+        <button
+          onClick={() => step(1)}
+          className="rounded p-0.5 text-muted hover:bg-surface hover:text-foreground"
+          aria-label="Next variant"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function CanvasSidePanel({
   canvasRef,
@@ -52,23 +185,24 @@ export function CanvasSidePanel({
   }, [models, model]);
 
   const modelName = models?.find((m) => m.id === model)?.name ?? "Model";
-  const loraName = loras?.find((l) => l.id === lora)?.name;
+  const groups = React.useMemo(() => buildLoraGroups(loras ?? []), [loras]);
+  const activeLoraGroup = React.useMemo(
+    () => groups.find((g) => g.variants.some((v) => v.id === lora)),
+    [groups, lora]
+  );
+  const loraChipLabel = activeLoraGroup ? loraDisplayName(activeLoraGroup.base) : "LoRA";
 
-  // Select a LoRA and keep its trigger token at the front of the prompt:
-  // remove the previously-applied token (if any) so it never stacks, then
-  // prepend the new one. The inserted token stays fully editable.
-  const selectLora = (id: string) => {
+  const selectLora = (id: string | null, keyword: string | null) => {
     setLora(id);
-    const token = loras?.find((l) => l.id === id)?.trigger_token ?? null;
     setPrompt((prev) => {
       let p = prev;
       if (appliedToken && p.startsWith(appliedToken)) {
         p = p.slice(appliedToken.length).replace(/^,\s*/, "");
       }
-      if (token && !p.startsWith(token)) p = p ? `${token}, ${p}` : token;
+      if (keyword && !p.startsWith(keyword)) p = p ? `${keyword}, ${p}` : keyword;
       return p;
     });
-    setAppliedToken(token);
+    setAppliedToken(keyword);
   };
   const [result, setResult] = React.useState<ImageOut | null>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
@@ -279,28 +413,25 @@ export function CanvasSidePanel({
             </Popover>
 
             <Popover
+              className="max-h-80 w-64 overflow-y-auto"
               trigger={
                 <Chip icon={<Layers />} active={!!lora}>
-                  {loraName ?? "LoRA"} <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                  {loraChipLabel}
                 </Chip>
               }
             >
-              {(close) =>
-                loras?.length ? (
-                  loras.map((l) => (
-                    <PopoverItem
-                      key={l.id}
-                      active={l.id === lora}
-                      onClick={() => { selectLora(l.id); close(); }}
-                    >
-                      <span className="flex-1">{l.name}</span>
-                      {l.id === lora && <span className="text-xs">✓</span>}
-                    </PopoverItem>
-                  ))
-                ) : (
-                  <p className="px-2 py-2 text-xs text-faint">No LoRAs found</p>
-                )
-              }
+              {groups.length ? (
+                groups.map((g) => (
+                  <CanvasLoraGroupRow
+                    key={g.base}
+                    group={g}
+                    selectedLora={lora}
+                    onSelect={selectLora}
+                  />
+                ))
+              ) : (
+                <p className="px-2 py-2 text-xs text-faint">No LoRAs found</p>
+              )}
             </Popover>
           </div>
 

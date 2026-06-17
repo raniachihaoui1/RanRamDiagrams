@@ -101,3 +101,24 @@ class TrainingJob(Base):
     log_path: Mapped[str | None] = mapped_column(String, nullable=True)
     output_path: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class TrainingDataset(Base):
+    """A named image dataset used for LoRA training."""
+
+    __tablename__ = "training_datasets"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String, default="Untitled dataset")
+    trigger_token: Mapped[str] = mapped_column(String, default="my_style")
+    description: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(
+        String, default="draft"
+    )  # draft | captioned | prepared
+    captions: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict
+    )  # {filename: caption_text}
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
