@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   Design tokens — neutral monochrome, Apple-like.
+   Colors are defined as CSS vars so light/dark can switch at runtime.
+   Tailwind classes (bg-surface, text-muted, …) map to these via @theme inline.
+   ========================================================================= */
+
+/* --- Light theme (default) ---------------------------------------------- */
+:root {
+  --base:             #ffffff;
+  --surface:          #f5f5f7;
+  --surface-2:        #ebebef;
+  --elevated:         #e2e2e8;
+  --border:           #d8d8e0;
+  --border-strong:    #c0c0cc;
+
+  --foreground:       #111112;
+  --muted:            #58585f;
+  --faint:            #9898a6;
+
+  --accent:           #111112;
+  --accent-foreground:#ffffff;
+
+  --paper:            #f4f4f5;
+  --paper-ink:        #18181b;
+
+  --shadow-float:  0 1px 2px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.10);
+  --shadow-panel:  0 1px 0 rgba(255,255,255,.6) inset, 0 12px 40px rgba(0,0,0,.10);
+}
+
+/* --- Dark theme --------------------------------------------------------- */
+.dark {
+  --base:             #0a0a0b;
+  --surface:          #16171a;
+  --surface-2:        #1d1e22;
+  --elevated:         #26272c;
+  --border:           #2a2b30;
+  --border-strong:    #3a3b42;
+
+  --foreground:       #f5f5f7;
+  --muted:            #a1a1aa;
+  --faint:            #6b6b73;
+
+  --accent:           #fafafa;
+  --accent-foreground:#0a0a0b;
+
+  --paper:            #f4f4f5;
+  --paper-ink:        #18181b;
+
+  --shadow-float:  0 1px 2px rgba(0,0,0,.40), 0 8px 24px rgba(0,0,0,.35);
+  --shadow-panel:  0 1px 0 rgba(255,255,255,.03) inset, 0 12px 40px rgba(0,0,0,.45);
+}
+
+/* --- Tailwind token map (inline = resolves at use time, not build time) - */
+@theme inline {
+  --color-base:             var(--base);
+  --color-surface:          var(--surface);
+  --color-surface-2:        var(--surface-2);
+  --color-elevated:         var(--elevated);
+  --color-border:           var(--border);
+  --color-border-strong:    var(--border-strong);
+
+  --color-foreground:       var(--foreground);
+  --color-muted:            var(--muted);
+  --color-faint:            var(--faint);
+
+  --color-accent:           var(--accent);
+  --color-accent-foreground:var(--accent-foreground);
+
+  --color-paper:            var(--paper);
+  --color-paper-ink:        var(--paper-ink);
+
+  /* Static tokens (no theming needed) */
+  --radius-pill: 9999px;
+  --radius-sm:   10px;
+  --radius-md:   14px;
+  --radius-lg:   18px;
+  --radius-xl:   24px;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Shadows are used as var(--shadow-float/panel) directly in JSX — no @theme token needed. */
+}
+
+html, body { height: 100%; }
+
+body {
+  background-color: var(--base);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* =========================================================================
+   Utilities
+   ========================================================================= */
+@layer utilities {
+  .glass {
+    background-color: color-mix(in srgb, var(--surface) 75%, transparent);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  }
+
+  .glass-strong {
+    background-color: color-mix(in srgb, var(--surface-2) 88%, transparent);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border: 1px solid var(--border);
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}

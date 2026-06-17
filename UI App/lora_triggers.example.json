@@ -1,0 +1,6 @@
+{
+  "__help__": "Copy this file to 'lora_triggers.json' (same folder) and map each LoRA to the EXACT trigger token you trained with. The app prepends this token to the prompt when you pick the LoRA. Keys are the LoRA name as shown in the UI (the filename without folder/extension) OR the full ComfyUI filename. Keys starting with '_' are ignored. Edits apply on the next /api/loras call (no restart needed). If a LoRA isn't listed here, the app guesses the token from the filename.",
+  "big_ran_ram_000001000": "big_ran_ram",
+  "technical_drawing_000001000": "technical_drawing",
+  "arctic_modern_000001000": "arctic_modern"
+}
