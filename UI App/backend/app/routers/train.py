@@ -252,9 +252,9 @@ def _build_prompts(trigger: str, description: str) -> tuple[str, str]:
     user = (
         "Analyse this image and return a JSON object with exactly this key:\n"
         "{\n"
-        f'  "training_caption": "<LoRA training caption — MUST start with \'{trigger}\' '
-        "and then describe the visual style, color palette, key elements, "
-        "composition, line quality, and any distinctive features in detail>"\n"
+        f'  "training_caption": "<LoRA training caption — MUST start with \'{trigger}\''
+        " and then describe the visual style, color palette, key elements,"
+        " composition, line quality, and any distinctive features in detail>\"\n"
         "}\n\n"
         f"The caption MUST begin with the trigger token '{trigger}'."
     )
