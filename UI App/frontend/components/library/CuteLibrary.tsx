@@ -15,11 +15,18 @@ const ZOOM_STEP = 0.15;
 export function CuteLibrary({
   images,
   onOpen,
+  compact = false,
 }: {
   images: ImageOut[];
   onOpen: (img: ImageOut) => void;
+  /** Smaller discs/spacing for embedding in a panel (e.g. the dashboard). */
+  compact?: boolean;
 }) {
-  const [active, setActive] = React.useState(0);
+  // Compact (dashboard widget) starts centred so the coverflow looks balanced;
+  // full view starts at the most-recent image.
+  const [active, setActive] = React.useState(() =>
+    compact ? Math.floor(images.length / 2) : 0
+  );
   const [zoom, setZoom] = React.useState(1);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -29,8 +36,14 @@ export function CuteLibrary({
 
   const go = React.useCallback(
     (dir: number) =>
-      setActive((a) => Math.min(images.length - 1, Math.max(0, a + dir))),
-    [images.length]
+      setActive((a) => {
+        const n = images.length;
+        if (n === 0) return 0;
+        // Compact carousel wraps around infinitely; full view clamps at the ends.
+        if (compact) return (a + dir + n) % n;
+        return Math.min(n - 1, Math.max(0, a + dir));
+      }),
+    [images.length, compact]
   );
 
   const zoomIn = React.useCallback(
@@ -48,6 +61,8 @@ export function CuteLibrary({
     []
   );
 
+  const [paused, setPaused] = React.useState(false);
+
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") go(-1);
@@ -56,6 +71,13 @@ export function CuteLibrary({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [go]);
+
+  // Compact mode auto-advances as a smooth infinite carousel (pauses on hover).
+  React.useEffect(() => {
+    if (!compact || paused || images.length <= 1) return;
+    const id = setInterval(() => go(-1), 2600);
+    return () => clearInterval(id);
+  }, [compact, paused, images.length, go]);
 
   // Non-passive wheel listener so we can preventDefault on Ctrl+scroll zoom
   React.useEffect(() => {
@@ -87,30 +109,43 @@ export function CuteLibrary({
   return (
     <div
       ref={containerRef}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
       className="relative flex h-full flex-col overflow-hidden rounded-xl bg-paper"
     >
       {/* Stage — takes all available space, centres the coverflow inside */}
       <div
         className="relative flex flex-1 items-center justify-center"
         style={{
-          perspective: "2450px",
+          perspective: compact ? "1700px" : "2450px",
           transform: `scale(${zoom})`,
           transformOrigin: "center center",
         }}
       >
         {images.map((img, i) => {
-          const offset = i - active;
+          let offset = i - active;
+          if (compact) {
+            // Wrap to the shortest direction so discs form an endless ring.
+            const n = images.length;
+            if (offset > n / 2) offset -= n;
+            else if (offset < -n / 2) offset += n;
+          }
           const abs = Math.abs(offset);
           const visible = abs <= 6;
           const rotateY = offset === 0 ? 0 : offset < 0 ? 44 : -44;
-          const translateX = offset * 245;
-          const translateZ = offset === 0 ? 140 : -abs * 70;
+          const translateX = offset * (compact ? 150 : 245);
+          const translateZ =
+            offset === 0 ? (compact ? 80 : 140) : -abs * (compact ? 44 : 70);
           const scale = offset === 0 ? 1 : 0.82;
           return (
             <button
               key={img.id}
               onClick={() => (offset === 0 ? onOpen(img) : setActive(i))}
-              className="absolute h-[28rem] w-[28rem] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl transition-all duration-500 ease-out sm:h-[35rem] sm:w-[35rem]"
+              className={
+                compact
+                  ? "absolute h-[15rem] w-[15rem] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl transition-all duration-500 ease-out sm:h-[17rem] sm:w-[17rem]"
+                  : "absolute h-[28rem] w-[28rem] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl transition-all duration-500 ease-out sm:h-[35rem] sm:w-[35rem]"
+              }
               style={{
                 transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                 zIndex: 100 - abs,
@@ -130,7 +165,8 @@ export function CuteLibrary({
         })}
       </div>
 
-      {/* Caption + controls — fixed height at the bottom */}
+      {/* Caption + controls — fixed height at the bottom (hidden in compact) */}
+      {!compact && (
       <div className="flex shrink-0 flex-col items-center gap-3 pb-6 pt-4 text-paper-ink">
         <p className="line-clamp-1 max-w-md text-center text-sm text-paper-ink/70">
           {activeImg.prompt || activeImg.filename}
@@ -171,6 +207,7 @@ export function CuteLibrary({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }
