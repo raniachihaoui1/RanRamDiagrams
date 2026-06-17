@@ -25,7 +25,7 @@ Design language: **90% Krea**, Apple-like — dark base, rounded corners, glassm
 python -m venv backend/.venv
 backend/.venv/Scripts/pip install -r backend/requirements.txt
 cd frontend; npm install; cd ..
-Copy-Item .env.example .env
+Copy-Item .env.example .env        # then edit .env — see "Environment" below
 
 # Run both servers (backend :8000 + frontend :3000)
 ./dev.ps1
@@ -35,6 +35,20 @@ backend/.venv/Scripts/python -m uvicorn app.main:app --reload --port 8000   # ru
 cd frontend; npm run dev            # frontend
 cd frontend; npm run build          # production build (typechecks too)
 ```
+
+## Environment
+
+`.env` is machine-specific and **never committed**. After `Copy-Item .env.example .env` edit at minimum:
+
+```
+COMFY_MODE=auto          # auto = real when ComfyUI is running, mock otherwise
+COMFY_URL=http://127.0.0.1:8188
+COMFY_DIR=<absolute path to your local ComfyUI install>
+#   e.g. COMFY_DIR=F:/ComfyUI  or  C:/Users/yourname/ComfyUI
+#   The backend auto-derives LORAS_DIR from COMFY_DIR/models/loras when LORAS_DIR is empty.
+```
+
+`COMFY_DIR` **must point to your own machine's ComfyUI folder** — never commit another machine's path. The backend uses it to discover local LoRAs and models. If you leave it pointing to a non-existent path, the LoRA/model dropdowns will be empty.
 
 ## Frontend routes
 
@@ -58,7 +72,7 @@ cd frontend; npm run build          # production build (typechecks too)
 ## Library (Phase 4)
 
 - `app/(app)/library/page.tsx` — fetches all images once (`["images", {limit:1000}]`) and filters client-side (All/Favorites/Generated/Edited/Uploaded, right rail). Two view modes via toggle: **Grid** (date-grouped via `lib/date.groupByDate`, uses `ImageGrid`) and **Cute** (`components/library/CuteLibrary`).
-- `components/library/CuteLibrary.tsx` — the experimental "discs on a shelf": a 3D CSS coverflow on the light `paper` background; arrow keys / wheel / side-click to navigate, center-click opens the modal.
+- `components/library/CuteLibrary.tsx` — 3D CSS coverflow ("discs on a shelf") on the light `paper` background. Props: `images`, `onOpen`, `compact` (optional bool). **Full mode** (Library page): arrow keys / wheel / side-click to navigate, center-click opens the modal, shows caption + controls (zoom, arrows, counter). **Compact mode** (Dashboard widget): smaller discs (17rem), circular infinite wrap-around, auto-advances every 2.6 s, pauses on hover, no caption or controls visible — navigation via side-click, scroll and keyboard only.
 - Favorite/delete from the modal invalidate `["images"]`, so the library and dashboard stay in sync.
 
 ## Canvas, Rhino, Train (Phase 5)
@@ -66,6 +80,16 @@ cd frontend; npm run build          # production build (typechecks too)
 - **Canvas** (`app/(app)/canvas/page.tsx`): plain HTML5 `<canvas>` with vector-op replay (no Konva). State in `store/canvas.ts` — a document of `layers[]` (each with `ops[]`), tools (brush/eraser/rect/ellipse/line/arrow), color/size, undo. `CanvasStage` re-renders base image + visible layers each frame; eraser uses `destination-out`. `CanvasSidePanel` does base-image pick/upload, layers, and **Generate** (flattens canvas → uploads → img2img via the existing job flow) + **Save** (persists project + a flattened thumbnail). Coordinates are stored in document pixel space; pointer events are scaled from the displayed canvas rect.
 - **Rhino** (`components/rhino/RhinoLiveView.tsx`): viewer of `/ws/rhino`; opened from a button in the generator header. "Use frame as reference" uploads the current frame and sets it as the img2img reference (`useGeneratorStore.getState().setReference`). The Rhino side: `rhino/viewport_stream.py` is a runnable **Rhino 8 (Python 3)** streamer — captures the active viewport's current display mode (shaded/rendered) at ~6 FPS as JPEG, auto-reconnects, Esc to stop; needs `websocket-client` installed once in Rhino's Python. `rhino/test_source.py` streams an animated test pattern (run with the backend venv — `websockets`+`pillow`, no extra deps) to verify the hub + web viewer **without Rhino**. Wire format + quick start in `rhino/PROTOCOL.md`. Bridge relay verified end-to-end (source→hub→viewer).
 - **Train** (`app/(app)/train/page.tsx`): a config form that creates scaffold runs + lists them. Real GPU training is deferred to the repo's x-flux pipeline.
+
+## Dashboard layout
+
+`app/(app)/dashboard/page.tsx` is a **no-scroll, viewport-filling layout** (`h-dvh` flex-col). Three sections stacked vertically:
+
+1. **Hero** (`flex-1`, `min-h-[240px]`) — gradient banner with headline, CTA buttons, and a `fill` image (`Homeimg.png`) that covers the full hero height without cropping. Uses `object-cover object-center`.
+2. **Tools** (`shrink-0`) — 5 tool cards in a `grid-cols-5` row. Compact (no arrow button, reduced padding) so they don't consume vertical space.
+3. **Recent** (`flex-1 min-h-0`) — CuteLibrary in `compact` mode inside a `min-h-0 flex-1` wrapper so it claims all remaining space without overflowing. Fetches up to 1 000 images so the carousel shows the full collection.
+
+Hero and Recent share remaining space equally (both `flex-1`), resulting in near-identical heights (~300 px on a 900 px screen). Do not add fixed heights to these sections — let the flex layout adapt to the user's screen.
 
 ## Deploy & verification
 
@@ -106,5 +130,21 @@ Generation flow: `routers/generate` → `services/jobs.JobManager` (in-memory pu
 
 - UI primitives live in `components/ui/` (Button, GlassPanel, Chip, …); feature components under `components/<feature>/`.
 - Keep the chrome monochrome; never introduce a brand accent color — active states use near-white (`accent`).
-- App name is a config token (`APP_NAME` / `NEXT_PUBLIC_APP_NAME`), currently a placeholder.
+- App name is a config token (`APP_NAME` / `NEXT_PUBLIC_APP_NAME`), currently `RanRam Studio`.
 - Commit + update this file after each meaningful phase/decision (per project workflow).
+
+## Critical git rules
+
+**Never commit the following** — they are git-ignored for a reason and must stay out of version control:
+
+| Path | Why |
+|---|---|
+| `storage/` | Personal generated images, thumbnails, uploads, canvas projects and `app.db`. The DB stores **absolute paths** from the machine that created it — committing it breaks image serving on every other machine. |
+| `backend/**/__pycache__/` | Python bytecodes tied to a specific Python version and machine. |
+| `frontend/.next/` or `.next.bak/` | Next.js build artefacts. |
+| `backend/.venv/` | The virtual environment. Each developer creates their own with `python -m venv backend/.venv`. |
+| `.env` | Machine-specific config (ports, paths, API keys). Use `.env.example` as the template. |
+
+**Never hardcode absolute paths** from your own machine (`C:/Users/yourname/…`) in source files or `.env.example`. Use the `COMFY_DIR` env var instead and let the backend derive paths from it.
+
+The venv is always named **`.venv`** (not `renv` or `venv`). `dev.ps1` looks for `backend/.venv/Scripts/python.exe`; changing this name breaks the launcher for everyone.
