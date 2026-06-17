@@ -1,0 +1,5 @@
+renv
+venv
+__pycache__
+*.pyc
+_smoke*.py

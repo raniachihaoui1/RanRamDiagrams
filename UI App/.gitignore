@@ -1,0 +1,36 @@
+# ---- Node / Next.js ----
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+frontend/next-env.d.ts
+npm-debug.log*
+
+# ---- Python ----
+backend/renv/
+backend/venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ---- Env ----
+.env
+.env.local
+*.local
+
+# ---- Per-user LoRA trigger-token overrides (keep the example tracked) ----
+lora_triggers.json
+
+# ---- Storage (generated content — keep folders, ignore contents) ----
+storage/images/*
+storage/thumbnails/*
+storage/uploads/*
+storage/canvas_projects/*
+storage/training_datasets/*
+storage/app.db
+!storage/**/.gitkeep
+
+# ---- Models ----
+# This app does NOT host model files. In real mode models live in your ComfyUI;
+# in mock mode none are needed. Ignore a stray models/ folder just in case.
+models/

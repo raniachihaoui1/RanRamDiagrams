@@ -4,6 +4,60 @@ Train a FLUX dev LoRA that converts any image or Rhino 3D screenshot into a ranr
 
 ---
 
+## UI App (web interface)
+
+A Krea-style web app that uses these LoRAs with ComfyUI workflows (generate, image-to-image, canvas editor, library, Rhino bridge) lives in [`UI App/`](UI%20App/). It runs fully in **mock mode** (no GPU/ComfyUI needed) so you can try the whole UI immediately.
+
+**Quick start (Windows / PowerShell):**
+
+```powershell
+cd "UI App"
+
+# 1. Backend deps
+python -m venv backend/renv
+backend/renv/Scripts/pip install -r backend/requirements.txt
+backend/renv/Scripts/Activate.ps1
+
+# 2. Frontend deps
+cd "UI App\frontend"; npm install
+
+# 3. Env
+Copy-Item .env.example .env
+
+# 4. Run both (backend :8000 + frontend :3000)
+./dev.ps1
+```
+
+Then open http://localhost:3000 (if 3000 is busy, Next falls back to :3001 — check the dev log). Full details, deploy, and going mock → real ComfyUI are in [`UI App/README.md`](UI%20App/README.md).
+
+### Rhino live viewport
+
+Stream your Rhino 8 viewport directly into the app for use as an img2img reference.
+
+**Step 1 — Make sure the app is running** (`./dev.ps1` from `UI App/`).
+
+**Step 2 (optional) — Verify without Rhino** using the animated test source:
+
+```powershell
+# from UI App/
+backend/renv/Scripts/python rhino/test_source.py    # Ctrl-C to stop
+```
+
+Open the app → Image → click the **Rhino viewport** button in the generator header. You should see an animated test pattern at ~6 FPS.
+
+**Step 3 — Stream the real viewport from Rhino 8:**
+
+1. In Rhino, open the **ScriptEditor** (`Tools → PythonScript → Edit`).
+2. Open the file `UI App/rhino/viewport_stream.py`.
+3. Click **Run**. On the first run it auto-installs `websocket-client` (needs internet).
+4. The live viewport appears in the app panel.
+5. Click **"Use frame as reference"** to snapshot the current frame as the img2img input — the Aspect chip switches to **Custom** and matches the frame's resolution automatically.
+6. Press **Esc** in Rhino (or close the ScriptEditor) to stop streaming.
+
+> The streamer captures the active viewport at ~6 FPS as JPEG and sends it to the backend hub (`ws://localhost:8000/ws/rhino`), which relays it to the web viewer in real time. The Rhino script auto-reconnects if the app restarts.
+
+---
+
 ## 1. Overview
 
 The pipeline has five stages:

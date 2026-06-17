@@ -22,8 +22,10 @@ Activate `renv` first, then:
 ```powershell
 cd "UI App"
 
-# 1. Backend deps (into renv)
-pip install -r backend/requirements.txt
+# 1. Backend deps (creates an isolated Python env)
+python -m venv backend/renv
+backend/renv/Scripts/pip install -r backend/requirements.txt
+backend/renv/Scripts/Activate.ps1
 
 # 2. Frontend deps
 cd frontend; npm install; cd ..
@@ -40,11 +42,15 @@ Then open http://localhost:3000 (or :3001 if 3000 is taken).
 > If port 3000 is already in use, Next.js falls back to **:3001** (it prints the
 > actual URL in the dev log). The backend always uses :8000.
 
+> **macOS / Linux:** the venv binaries are under `backend/renv/bin/` instead of
+> `backend/renv/Scripts/`, and there is no `dev.ps1` — run the backend and
+> frontend in two terminals (see [Run servers individually](#run-servers-individually)).
+
 ### Run servers individually
 
 ```powershell
-# Backend (from UI App/backend/)
-python -m uvicorn app.main:app --reload --port 8000
+# Backend (from backend/)
+renv/Scripts/python -m uvicorn app.main:app --reload --port 8000
 
 # Frontend (from UI App/frontend/)
 npm run dev
