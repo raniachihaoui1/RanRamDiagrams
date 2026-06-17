@@ -1,0 +1,51 @@
+# ---- Python virtual envs ----
+renv/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+.turbo/
+next-env.d.ts
+npm-debug.log*
+yarn-error.log*
+
+# ---- Model files (large binaries — store in ComfyUI, not git) ----
+*.safetensors
+*.ckpt
+*.pt
+*.bin
+*.gguf
+models/
+
+# ---- Generated / build artifacts ----
+*.sst
+*.log
+dist/
+build/
+
+# ---- Env & secrets ----
+.env
+.env.local
+*.local
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Storage (generated content) ----
+storage/images/*
+storage/thumbnails/*
+storage/uploads/*
+storage/canvas_projects/*
+storage/training_datasets/*
+storage/app.db
+!storage/**/.gitkeep
