@@ -48,7 +48,7 @@ export default function DashboardPage() {
     <div className="mx-auto flex h-dvh max-w-6xl flex-col px-8 py-5">
 
       {/* Hero banner */}
-      <section className="relative shrink-0 overflow-hidden rounded-2xl border border-[#e8e0f0] flex items-center justify-between gap-6 pr-0"
+      <section className="relative flex flex-1 min-h-[240px] items-center justify-between gap-6 overflow-hidden rounded-2xl border border-[#e8e0f0] pr-0"
         style={{ background: "linear-gradient(120deg, #ede8ff 0%, #f9f5ff 35%, #fff7f0 70%, #ffe8d6 100%)" }}
       >
         <div className="p-7 shrink-0 max-w-[52%]">
@@ -74,12 +74,12 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
-        <div className="shrink-0 h-[180px] flex-1 relative">
+        <div className="relative h-full flex-1 self-stretch">
           <Image
             src="/Homeimg.png"
             alt="Concept sketch"
             fill
-            className="object-cover object-left rounded-r-2xl"
+            className="object-cover object-center rounded-r-2xl"
           />
           <span className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm text-xs text-[#58585f] px-3 py-1 rounded-full border border-white/60 shadow-sm">
             Concept sketch
